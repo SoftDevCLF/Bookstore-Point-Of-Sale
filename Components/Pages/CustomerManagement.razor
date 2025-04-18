@@ -23,7 +23,12 @@
 
         <div class="col-4">
             <h3>Add New Customer</h3>
-            <button @* @onclick="GoToAddNewCustomerPage" *@ class="btn btn-primary">Add New Customer</button>
+            <button @* @onclick="GoToAddNewCustomerPage" *@ type="button" class="btn btn-primary align-middle">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="align-middle bi bi-person-plus-fill me-2" viewBox="0 0 16 16">
+                    <path d="M1 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6"/>
+                    <path fill-rule="evenodd" d="M13.5 5a.5.5 0 0 1 .5.5V7h1.5a.5.5 0 0 1 0 1H14v1.5a.5.5 0 0 1-1 0V8h-1.5a.5.5 0 0 1 0-1H13V5.5a.5.5 0 0 1 .5-.5"/>
+                </svg> Add New Customer
+            </button>
 
         </div>
     </div>
@@ -35,9 +40,9 @@
     <p class="mt-3 ms-3">Search Results</p>
     <table class="table">
         <thead>
-            <tr >
-                <th class="text-primary border-secondary">ID</th>
-                <th class="text-primary border-secondary w-25">Customer Name</th>
+            <tr>
+                <th class="text-primary border-secondary">Customer ID</th>
+                <th class="text-primary border-secondary">Name</th>
                 <th class="text-primary border-secondary">Email</th>
                 <th class="text-primary border-secondary">Phone Number</th>
                 <th class="text-primary border-secondary align-middle text-center"> Actions </th>
