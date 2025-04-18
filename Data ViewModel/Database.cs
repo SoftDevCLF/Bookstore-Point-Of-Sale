@@ -9,13 +9,13 @@ namespace Library_Manager.Data
 {
     public class Database
     {
-        "ConnectionStrings": {
-    "MariaDB": "Server=yourserver;Database=yourdb;User=youruser;Password=yourpassword;"
-}
+                "ConnectionStrings": {
+            "MariaDB": "Server=yourserver;Database=yourdb;User=youruser;Password=yourpassword;"
+        }
 
         public MySqlConnection GetConnection()
         {
-            return new MySqlConnection(_connectionString);
+            return new MySqlConnection(connectionString);
         }
     }
 }
