@@ -6,18 +6,56 @@ using System.Threading.Tasks;
 
 namespace BookstorePointOfSale.DataModel
 {
-    public class Customer : ISearch
+    /// <summary>
+    /// Represents a Customer
+    /// </summary>
+    public class Customer
     {
+        /// <summary>
+        /// Property for customer id
+        /// </summary>
         public int CustomerId { get; set; }
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-        public string Email { get; set; }
-        public string PhoneNumber { get; set; }
-        public List<Customer> Customers { get; set; } = new List<Customer>(); // List of customers>
 
-        public void Search(string searchTerm)
+        /// <summary>
+        /// Property for customer first name
+        /// </summary>
+        public string FirstName { get; set; }
+
+        /// <summary>
+        /// Property for customer last name
+        /// </summary>
+        public string LastName { get; set; }
+
+        /// <summary>
+        /// Property for customer email
+        /// </summary>
+        public string Email { get; set; }
+
+        /// <summary>
+        /// Property for customer phone number
+        /// </summary>
+        public string PhoneNumber { get; set; }
+
+        /// <summary>
+        /// Provides immutable list of sales
+        /// </summary>
+        public List<Sales> Sales = new List<Sales>();
+
+        /// <summary>
+        /// Constructs Customer object
+        /// </summary>
+        /// <param name="customerId">Customer id</param>
+        /// <param name="firstName">Customer first name</param>
+        /// <param name="lastName">Customer last name</param>
+        /// <param name="email">Customer email</param>
+        /// <param name="phoneNumber">Customer phone number</param>
+        public Customer(int customerId, string firstName, string lastName, string email, string phoneNumber)
         {
-            throw new NotImplementedException();
+            CustomerId = customerId;
+            FirstName = firstName;
+            LastName = lastName;
+            Email = email;
+            PhoneNumber = phoneNumber;
         }
     }
 }
