@@ -1,5 +1,110 @@
-﻿<h3>CustomerManagement</h3>
+﻿@page "/customerManagement"
+@using BookstorePointOfSale.DataViewModel
+@using BookstorePointOfSale.DataModel
+@inject IJSRuntime JS
+
+<h1>Customer Management</h1>
+<hr>
+<p>Welcome to the Customer Management Page</p>
+
+<div class="container">
+    <div class="row">
+        <div class="col-8">
+            <h3>Search for a customer</h3>
+            <form @onsubmit="SearchCustomer">
+
+                <div class="input-group mb-3 ">
+                    <input class="border rounded-1 w-50 ps-3" placeholder="Phone Number (10 digits, no spaces)" @bind="phoneNumber" />
+                    <button class="btn btn-primary" type="submit">Search</button>
+                </div>
+
+            </form>
+        </div>
+
+        <div class="col-4">
+            <h3>Add New Customer</h3>
+            <button @* @onclick="GoToAddNewCustomerPage" *@ class="btn btn-primary">Add New Customer</button>
+
+        </div>
+    </div>
+</div>
+
+<hr>
+
+<div class="col-md-12 border-start border-end border-top align-middle">
+    <p class="mt-3 ms-3">Search Results</p>
+    <table class="table">
+        <thead>
+            <tr >
+                <th class="text-primary border-secondary">ID</th>
+                <th class="text-primary border-secondary w-25">Customer Name</th>
+                <th class="text-primary border-secondary">Email</th>
+                <th class="text-primary border-secondary">Phone Number</th>
+                <th class="text-primary border-secondary align-middle text-center"> Actions </th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (found == true)
+            {
+                <tr class="align-middle">
+                    <td >@foundCustomer.CustomerId</td>
+                    <td >@foundCustomer.FirstName @foundCustomer.LastName</td>
+                    <td >@foundCustomer.Email</td>
+                    <td >@foundCustomer.PhoneNumber</td>
+                    <td class="text-center"><button class="btn btn-success" @* @onclick="EditCustomer(foundCustomer.Id)" *@>Start a Sale</button>
+                        <button class="btn btn-primary" @* @onclick="EditCustomer(foundCustomer.Id)" *@>Edit</button>
+                        <button class="btn btn-danger" @* @onclick="EditCustomer(foundCustomer.Id)" *@>Delete</button></td>
+                </tr>
+            }
+
+            else if (found == false)
+            {
+                <p>No results found.</p>
+            }
+        </tbody>
+    </table>
+</div>
+
 
 @code {
+
+    string phoneNumber;
+    Customer foundCustomer;
+    bool found;
+
+    /// <summary>
+    /// Search for a customer manager
+    /// </summary>
+    public async Task SearchCustomer() //Async method to search for a customer
+    {
+        found = false; //Set found to false
+
+        if (!phoneNumber.All(char.IsDigit)) //Check if the phone number is numeric
+        {
+            await JSAlert("Only numeric values are allowed for phone number.");
+            return;
+        }
+        else if (String.IsNullOrEmpty(phoneNumber)) //Check if the phone number is empty
+		{
+			await JSAlert("Please enter a phone number.");
+			return;
+		}
+        else if (phoneNumber.Length != 10) //Check if the phone number is 10 digits
+		{
+			await JSAlert("Phone number must be 10 digits.");
+			return;
+		}
+        else //If the phone number is valid
+        {
+            foundCustomer = CustomerDatabase.Search(phoneNumber); //Search for the customer
+		    found = true;  //Set found to true
+        }
+        
+	}
+
+    private async Task JSAlert(string message) //Async method to display an alert
+    {
+        await JS.InvokeVoidAsync("alert", message);
+    }
 
 }
