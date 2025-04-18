@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Library_Manager.Data
+namespace BookstorePointOfSale.Data
 {
     /// <summary>
     /// Abstract representation of a book
@@ -17,8 +17,10 @@ namespace Library_Manager.Data
         public string Author { get; set; }
         public int Edition { get; set; }
         public string Editorial { get; set; }
+        public string Year { get; set; }
         public string Genre { get; set; }
         public string? Comments { get; set; }
+        public double Price { get; set; }
         
 
         /// <summary>
@@ -31,15 +33,17 @@ namespace Library_Manager.Data
         /// <param name="editorial">Editorial</param>
         /// <param name="genre">Category</param>
         /// <param name="comments">Commentaries</param>
-        public Book(string isbn, string title, string author, int edition, string editorial, string genre, string? comments = null)
+        public Book(string isbn, string title, string author, int edition, string editorial, string year, string genre, string? comments = null, double price = 0)
         {
             ISBN = isbn;
             Title = title;
             Author = author;
             Edition = edition;
             Editorial = editorial;
+            Year = year;
             Genre = genre;
             Comments = comments;
+            Price = price;
 
         }
 

@@ -6,11 +6,7 @@ using System.Threading.Tasks;
 
 namespace BookstorePointOfSale.Data
 {
-    public interface IInventoryManager
+    public class CustomerDatabase : Database
     {
-        void Add();
-        void Update();
-        void Delete();
-        void Sum();
     }
 }

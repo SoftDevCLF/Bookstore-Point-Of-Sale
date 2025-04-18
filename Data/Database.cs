@@ -5,17 +5,18 @@ using System.Text;
 using System.Threading.Tasks;
 using MySqlConnector;
 
-namespace Library_Manager.Data
+namespace BookstorePointOfSale.Data
 {
     public class Database
     {
-        "ConnectionStrings": {
-    "MariaDB": "Server=yourserver;Database=yourdb;User=youruser;Password=yourpassword;"
-}
-
-        public MySqlConnection GetConnection()
+        private readonly string _connectionString = new MySqlConnectionStringBuilder
         {
-            return new MySqlConnection(_connectionString);
-        }
+            Server = "localhost",
+            UserID = "root",
+            Password = "12345678",
+            Database = "bookstoredb"
+        }.ConnectionString;
+
+        protected MySqlConnection GetConnection() => new MySqlConnection(_connectionString);
     }
 }
