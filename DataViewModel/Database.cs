@@ -7,9 +7,15 @@ using MySqlConnector;
 
 namespace BookstorePointOfSale.DataViewModel
 {
+    /// <summary>
+    /// Manager class for Database
+    /// </summary>
     public class Database
     {
-        private readonly string _connectionString = new MySqlConnectionStringBuilder
+        /// <summary>
+        /// Connection string
+        /// </summary>
+        private static readonly string _connectionString = new MySqlConnectionStringBuilder
         {
             Server = "localhost",
             UserID = "root",
@@ -17,6 +23,9 @@ namespace BookstorePointOfSale.DataViewModel
             Database = "bookstoredb"
         }.ConnectionString;
 
-        protected MySqlConnection GetConnection() => new MySqlConnection(_connectionString);
+        /// <summary>
+        /// Returns a connection to the database
+        /// </summary>
+        public static MySqlConnection GetConnection() => new MySqlConnection(_connectionString);
     }
 }
