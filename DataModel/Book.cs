@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BookstorePointOfSale.Data
+namespace BookstorePointOfSale.DataModel
 {
     /// <summary>
     /// Abstract representation of a book

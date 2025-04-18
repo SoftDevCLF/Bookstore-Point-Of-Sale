@@ -4,9 +4,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace BookstorePointOfSale.Data
+namespace BookstorePointOfSale.DataModel
 {
-    public class CustomerDatabase : Database
+    public interface ISearch
     {
+        void Search(string searchTerm);
     }
 }

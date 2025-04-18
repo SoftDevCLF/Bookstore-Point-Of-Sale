@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using MySqlConnector;
 
-namespace BookstorePointOfSale.Data
+namespace BookstorePointOfSale.DataViewModel
 {
     public class Database
     {
