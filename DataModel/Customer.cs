@@ -57,6 +57,21 @@ namespace BookstorePointOfSale.DataModel
             Email = email;
             PhoneNumber = phoneNumber;
         }
+
+        /// <summary>
+        /// Constructs Customer object
+        /// </summary>
+        /// <param name="firstName">Customer first name</param>
+        /// <param name="lastName">Customer last name</param>
+        /// <param name="email">Customer email</param>
+        /// <param name="phoneNumber">Customer phone number</param>
+        public Customer(string firstName, string lastName, string email, string phoneNumber)
+        {
+            FirstName = firstName;
+            LastName = lastName;
+            Email = email;
+            PhoneNumber = phoneNumber;
+        }
     }
 }
 
