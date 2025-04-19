@@ -24,7 +24,7 @@ namespace BookstorePointOfSale.DataViewModel
         /// </summary>
         /// <param name="customer">Customer object</param>
         /// <returns>Customer ID</returns>
-        public int AddCustomer (Customer customer)
+        public static Customer AddCustomer (Customer customer)
         {
             int customerId = 0; //Start customer ID at 0
             using (MySqlConnection connection = GetConnection()) //Create connection
@@ -48,7 +48,9 @@ namespace BookstorePointOfSale.DataViewModel
                 
             }
 
-             return customerId;
+             customer.CustomerId = customerId;
+
+             return customer;
 
         }
 
