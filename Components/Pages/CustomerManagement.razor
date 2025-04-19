@@ -1,16 +1,24 @@
 ﻿@page "/customerManagement"
 @using BookstorePointOfSale.DataViewModel
 @using BookstorePointOfSale.DataModel
+@inject NavigationManager Navigation
 @inject IJSRuntime JS
 
+<nav aria-label="breadcrumb" class="bg-secondary bg-opacity-10 rounded-3">
+    <ol class="breadcrumb align-content-center ps-3 pt-1 pb-1">
+        <li class="breadcrumb-item"><a href="/">Home</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Customer Management</li>
+    </ol>
+</nav>
+<hr />
 <h1>Customer Management</h1>
-<hr>
-<p>Welcome to the Customer Management Page</p>
+<hr/>
+<p class="ms-2 text-muted">Welcome to the Customer Management Page</p>
 
 <div class="container">
     <div class="row">
         <div class="col-8">
-            <h3>Search for a customer</h3>
+            <h4>Search for a customer</h4>
             <form @onsubmit="SearchCustomer">
 
                 <div class="input-group mb-3 ">
@@ -22,8 +30,8 @@
         </div>
 
         <div class="col-4">
-            <h3>Add New Customer</h3>
-            <button @* @onclick="GoToAddNewCustomerPage" *@ type="button" class="btn btn-primary align-middle">
+            <h4>Add New Customer</h4>
+            <button @onclick="GoToAddNewCustomerPage" type="button" class="btn btn-primary align-middle">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="align-middle bi bi-person-plus-fill me-2" viewBox="0 0 16 16">
                     <path d="M1 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6"/>
                     <path fill-rule="evenodd" d="M13.5 5a.5.5 0 0 1 .5.5V7h1.5a.5.5 0 0 1 0 1H14v1.5a.5.5 0 0 1-1 0V8h-1.5a.5.5 0 0 1 0-1H13V5.5a.5.5 0 0 1 .5-.5"/>
@@ -49,7 +57,7 @@
             </tr>
         </thead>
         <tbody>
-            @if (found == true)
+            @if (foundCustomer != null)
             {
                 <tr class="align-middle">
                     <td >@foundCustomer.CustomerId</td>
@@ -62,7 +70,7 @@
                 </tr>
             }
 
-            else if (found == false)
+            else if (foundCustomer == null)
             {
                 <p>No results found.</p>
             }
@@ -74,36 +82,59 @@
 @code {
 
     string phoneNumber;
-    Customer foundCustomer;
-    bool found;
+    bool validPhoneNumber;
+    Customer foundCustomer = null;
+    bool found = false;
 
     /// <summary>
     /// Search for a customer manager
     /// </summary>
     public async Task SearchCustomer() //Async method to search for a customer
     {
-        found = false; //Set found to false
 
-        if (!phoneNumber.All(char.IsDigit)) //Check if the phone number is numeric
-        {
-            await JSAlert("Only numeric values are allowed for phone number.");
-            return;
-        }
-        else if (String.IsNullOrEmpty(phoneNumber)) //Check if the phone number is empty
-		{
-			await JSAlert("Please enter a phone number.");
-			return;
-		}
-        else if (phoneNumber.Length != 10) //Check if the phone number is 10 digits
-		{
-			await JSAlert("Phone number must be 10 digits.");
-			return;
-		}
-        else //If the phone number is valid
+         //Validate the phone number
+
+        if (await ValidatePhoneNumber()) //If the phone number is valid
         {
             foundCustomer = CustomerDatabase.Search(phoneNumber); //Search for the customer
-		    found = true;  //Set found to true
+            found = foundCustomer != null; //Set found to true
+            if (!found) //If the customer is not found
+            {
+                await JSAlert("Customer not found.");
+            }
         }
+
+        phoneNumber = "";
+
+    }
+
+    private async Task<bool> ValidatePhoneNumber() //Method to validate the phone number
+    {
+       
+        if (!phoneNumber.All(char.IsDigit)) //Check if the phone number is numeric
+        {
+            JSAlert("Only numeric values are allowed for phone number.");
+            return false;
+        }
+        else if (String.IsNullOrEmpty(phoneNumber)) //Check if the phone number is empty
+        {
+            JSAlert("Please enter a phone number.");
+			return false;
+        }
+        else if (phoneNumber.Length != 10) //Check if the phone number is 10 digits
+        {
+            JSAlert("Phone number must be 10 digits.");
+			return false;
+        }
+        
+        
+        return true;
+        
+    }
+
+    private void GoToAddNewCustomerPage() //Method to go to the add new customer page
+	{
+		Navigation.NavigateTo("/addNewCustomer");
         
 	}
 
