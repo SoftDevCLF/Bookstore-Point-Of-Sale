@@ -1,0 +1,168 @@
+﻿@page "/addNewCustomer"
+@using BookstorePointOfSale.DataViewModel
+@using BookstorePointOfSale.DataModel
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<nav aria-label="breadcrumb" class="bg-secondary bg-opacity-10 rounded-3">
+    <ol class="breadcrumb align-content-center ps-3 pt-1 pb-1">
+        <li class="breadcrumb-item"><a href="/">Home</a></li>
+        <li class="breadcrumb-item"><a href="/customerManagement">Customer Management</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Add New Customer</li>
+    </ol>
+</nav>
+<hr/>
+<h1>Add New Customer</h1>
+<hr/>
+<div class="container">
+    <div class="row">
+        <!-- Form Section -->
+        <div class="col-6">
+            <div class="fw-lighter mb-2">
+                <i class="text-danger">*</i> <i>Required</i>
+            </div>
+
+
+            <form @onsubmit="@(async e => await AddCustomerToDatabase())">
+                <div class="mb-3">
+                    <label for="firstname" class="form-label">First Name</label>
+                    <div >
+                        <input @bind="firstName" class="form-control" id="firstname"/>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="lastname" class="form-label">Last Name</label>
+                    <div>
+                        <input @bind="lastName" class="form-control" id="lastname" />
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <div>
+                        <input @bind="email" type="email" class="form-control"  id="email"/>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="phonenumber" class="form-label">Phone Number<i class="text-danger">*</i></label>
+                    <div>
+                        <input @bind="phoneNumber" type="tel" class="form-control"  id="phonenumber" />
+                    </div>
+                </div>
+
+                <div>
+                    <button class="btn btn-primary mb-3 me-3 align-middle" type="submit">Add Customer</button>
+                </div>
+            </form>
+
+        </div>
+
+        <!--Customer Info Section -->
+        <div class="col-6  img-thumbnail">
+            @if (newCustomer)
+            {
+				<h4>New Customer Overview</h4>
+				<div class="bg-secondary bg-gradient bg-opacity-10 rounded-3 p-3">
+                    <div>
+                        <img class="m1 img-fluid rounded-3 " src="books.jpg" alt="Books Image" height="100" />
+                    </div>
+                    <div class="fw-bold p-3">
+                        @customer.FirstName @customer.LastName
+                    </div>
+					<div class="p-3">
+                        <div class="text-muted">Email</div>
+                        @customer.Email
+					</div>
+                    <div class="p-3">
+                        <div class="text-muted">Phone Number</div>
+                        @customer.PhoneNumber
+					</div>
+                </div>
+
+                <div class="mt-2 mb-2">
+                    <button class="btn btn-success mt-6" @* @onclick="GoToCustomerPage" *@>Start a Sale</button>
+                </div>
+            }
+        </div>
+
+    </div>
+</div>
+
+@code {
+
+    private string firstName;
+    private string lastName;
+    private string email;
+    private string phoneNumber;
+    private Customer customer;
+    private int customerId;
+    private bool newCustomer = false;
+
+
+    public async Task AddCustomerToDatabase()
+    {
+
+        if (!await ValidateName()  || !await ValidatePhoneNumber())
+        {
+            return;
+        }
+        
+        customer = new Customer(firstName, lastName, email, phoneNumber);
+        // Call the sync DB method in a task to avoid UI blocking
+        customer = await Task.Run(() => CustomerDatabase.AddCustomer(customer));
+		newCustomer = true;
+    }
+
+    private async Task<bool> ValidatePhoneNumber() //Method to validate the phone number
+    {
+
+        if (!phoneNumber.All(char.IsDigit)) //Check if the phone number is numeric
+        {
+            JSAlert("Only numeric values are allowed for phone number.");
+            return false;
+        }
+        else if (String.IsNullOrEmpty(phoneNumber)) //Check if the phone number is empty
+        {
+            JSAlert("Please enter a phone number.");
+            return false;
+        }
+        else if (phoneNumber.Length != 10) //Check if the phone number is 10 digits
+        {
+            JSAlert("Phone number must be 10 digits.");
+            return false;
+        }
+
+
+        return true;
+
+    }
+
+    private async Task<bool> ValidateName() //Method to validate the phone number
+    {
+
+        if (firstName.Any(char.IsDigit)) //Check if the phone number is numeric
+        {
+            JSAlert("A name should not contain numeric values.");
+            return false;
+        }
+        if (lastName.Any(char.IsDigit)) //Check if the phone number is numeric
+		{
+			JSAlert("A last name should not contain numeric values.");
+			return false;
+		}
+        
+        return true;
+
+    }
+
+    private async Task JSAlert(string message) //Async method to display an alert
+    {
+        await JS.InvokeVoidAsync("alert", message);
+    }
+
+
+
+
+}
