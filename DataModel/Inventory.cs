@@ -6,11 +6,9 @@ using System.Threading.Tasks;
 
 namespace BookstorePointOfSale.DataModel
 {
-    public class Inventory : Book, ISearch, IInventoryManager
+    public class Inventory : Book
     {
         public int Quantity { get; set; }
-        public double Price { get; set; }
-        public List<Book> Books { get; set; }
 
         public Inventory(string isbn,string title,string author,int edition,string editorial,string year,string genre,string? comments,double price,int quantity) : base(isbn, title, author, edition, editorial, year, genre, comments, price)
         {
