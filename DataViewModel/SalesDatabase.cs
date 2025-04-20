@@ -46,9 +46,31 @@ namespace BookstorePointOfSale.DataViewModel
                 }
             }
             return customer; //Return customer object
-
-
         }
+
+        /// <summary>
+        /// Displays books available to purchase from database
+        /// </summary>
+        //public static List<Book> DisplayBooks()
+        //{
+        //    //Book books = null; // Initialize books to null
+        //    //using (MySqlConnection connection = GetConnection()) //Create connection
+        //    //{
+        //    //    connection.Open(); //Open connection
+        //    //    string sql = "SELECT * FROM books"; //SQL statement
+        //    //    using (MySqlCommand command = new MySqlCommand(sql, connection)) //using command, execute query
+        //    //    {
+        //    //        using (MySqlDataReader reader = command.ExecuteReader()) //Execute reader
+        //    //        {
+        //    //            while (reader.Read()) //If reader has data
+        //    //            {
+        //    //                Console.WriteLine($"ISBN {reader.GetString(0)}, Book Title: {reader.GetString(1)}, Author: {reader.GetString(2)}, Edition: {reader.GetInt32(3)}, Editorial: {reader.GetString(4)}, Year: {reader.GetInt32(5)}, Genre: {reader.GetString(6)}, Comments: {reader.GetString(7)}, Unit Price: {reader.GetDecimal(8)}"); //Display book information
+        //    //            }
+        //    //        }
+        //    //    }
+        //    //}
+        //    //return books; //Return list of books
+        //}
     }
 }
 

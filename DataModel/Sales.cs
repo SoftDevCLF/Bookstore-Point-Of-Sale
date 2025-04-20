@@ -7,29 +7,63 @@ using BookstorePointOfSale.DataModel;
 
 namespace Library_Manager.Data
 {
+    /// <summary>
+    /// Represents a Sales record
+    /// </summary>
     public class Sales
     {
+        /// <summary>
+        /// Property for sale ID
+        /// </summary>
         public int SaleId { get; set; }
-        public int CustomerId { get; set; } 
+
+        /// <summary>
+        /// Property for customer ID associated with the sale
+        /// </summary>
+        public int CustomerId { get; set; }
+
+        /// <summary>
+        /// Property for the date of the sale
+        /// </summary>
         public DateTime SaleDate { get; set; }
+
+        /// <summary>
+        /// Property for the total amount of the sale
+        /// </summary>
         public double TotalAmount { get; set; }
+
+        /// <summary>
+        /// Property for the quantity of books sold
+        /// </summary>
         public int BooksQuantity { get; set; }
 
-        public List<Customer> Customers { get; set; } = new List<Customer>(); //1 -to-many relationship with Customer
+        /// <summary>
+        /// One-to-many relationship: List of customers associated with the sale
+        /// </summary>
+        public List<Customer> Customers { get; set; } = new List<Customer>();
 
-        public List<Book> Books { get; set; } = new List<Book>(); //1 -to-many relationship with Book
+        /// <summary>
+        /// One-to-many relationship: List of books included in the sale
+        /// </summary>
+        public List<Book> Books { get; set; } = new List<Book>();
 
-        //Constructor for the Sales class
+        /// <summary>
+        /// Constructs a Sales object
+        /// </summary>
+        /// <param name="saleId">Sale ID</param>
+        /// <param name="customerId">Customer ID</param>
+        /// <param name="saleDate">Date of sale</param>
+        /// <param name="totalAmount">Total amount of sale</param>
+        /// <param name="booksQuantity">Number of books sold</param>
         public Sales(int saleId, int customerId, DateTime saleDate, double totalAmount, int booksQuantity)
         {
-            this.SaleId = saleId;
-            this.CustomerId = customerId;
-            this.SaleDate = saleDate;
-            this.TotalAmount = totalAmount;
-            this.BooksQuantity = booksQuantity;
-            Customers = new List<Customer>(); //Create the list inside of the constructor
-            Books = new List<Book>(); //Create the list inside of the constructor
+            SaleId = saleId;
+            CustomerId = customerId;
+            SaleDate = saleDate;
+            TotalAmount = totalAmount;
+            BooksQuantity = booksQuantity;
+            Customers = new List<Customer>();
+            Books = new List<Book>();
         }
-
     }
 }
