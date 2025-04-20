@@ -4,12 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Library_Manager.Data
+namespace BookstorePointOfSale.DataModel
 {
-    public class Inventory : Book, ISearch, IInventoryManager
+    public class Inventory : Book, IInventoryManager
     {
         public int Quantity { get; set; }
-        public double Price { get; set; }
         public List<Book> Books { get; set; }
 
         public Inventory(string isbn, string title, string author, int edition, string editorial, string genre, string? commentaries, int quantity, double price) : base(isbn, title, author, edition, editorial, genre, commentaries)

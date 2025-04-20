@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Library_Manager.Data;
 using MySqlConnector;
 
-namespace BookstorePointOfSale.Data_ViewModel
+namespace BookstorePointOfSale.DataViewModel
 {
     /// <summary>
     /// Manager class for Sales Database
