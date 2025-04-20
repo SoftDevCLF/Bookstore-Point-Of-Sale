@@ -1,5 +1,8 @@
 ﻿@page "/sales"
-
+@using BookstorePointOfSale.DataViewModel
+@using BookstorePointOfSale.DataModel
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
 
 <nav aria-label="breadcrumb" class="bg-secondary bg-opacity-10 rounded-3">
     <ol class="breadcrumb align-content-center ps-3 pt-1 pb-1">
@@ -13,13 +16,86 @@
 <p class="ms-2 text-muted">Welcome to the Sales Page</p>
 
 
-<h3>Make A Sale</h3>
+<h5>Make A Sale</h5>
+<div class="container">
+    <div class="row">
+        <div class="col-8">
+            <h4>Search for a customer by ID</h4>
+            <form @onsubmit="SearchCustomer">
+                <div class="input-group mb-3 ">
+                    <input class="border rounded-1 w-50 ps-3" placeholder="Customer ID (no spaces)" @bind="customerId" />
+                    <button class="btn btn-primary" type="submit">Search</button>
+                </div>
+            </form>
+        </div>
+
+         <!-- Display search result -->
+            @if (!string.IsNullOrEmpty(searchResult))
+            {
+                <div class="alert alert-success mt-3">
+                    <p>Customer Found: @searchResult</p>
+                </div>
+            }
+            else if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger mt-3">
+                    <p>Error: @errorMessage</p>
+                </div>
+            }
+        </div>
+    </div>
 
 
 
 
 
 @code {
+    int customerId;
+    Customer foundCostumer = null;
+    bool found = false;
+
+    // Method to search for a customer by customer ID
+    public async Task SearchCustomer()
+    {
+        //Validate the customer ID
+
+        if (await ValidateCustomerId()) //If the customer Id is valid
+        {
+            foundCustomer = SalesDatabase.SearchId(customerId); //Search for the customer
+            found = found Customer != null; //Check if the customer was found
+            if (!found)
+            {
+                await JSAlert("alert", "Customer ID does not exist.");
+            }
+        }
+        customerId = 0; //Reset the customer ID
+    }
+
+    // Method to validate the customer ID
+    private async Task<bool> ValidateCustomerId()
+	{
+		//Check if the customer ID is empty
+		if (string.IsNullOrEmpty(customerId.ToString()))
+		{
+			await JSAlert("alert", "Customer ID cannot be empty.");
+			return false;
+		}
+		//Check if the customer ID is a number
+		if (!int.TryParse(customerId.ToString(), out _))
+		{
+			await JSAlert("alert", "Customer ID must be a number.");
+			return false;
+		}
+		//Check if the customer ID is less than 0
+		if (customerId < 0)
+		{
+			await JSAlert("alert", "Customer ID must be greater than 0.");
+			return false;
+		}
+
+		return true; //Return true if the customer ID is valid
+	}
+
 
 
 }
