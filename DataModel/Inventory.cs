@@ -6,46 +6,18 @@ using System.Threading.Tasks;
 
 namespace BookstorePointOfSale.DataModel
 {
-    public class Inventory : Book, ISearch, IInventoryManager
+    public class Inventory : Book
     {
         public int Quantity { get; set; }
-        public double Price { get; set; }
-        public List<Book> Books { get; set; }
 
-        public Inventory(string isbn, string title, string author, int edition, string editorial, string genre, string? commentaries, int quantity, double price) : base(isbn, title, author, edition, editorial, genre, commentaries)
+        public Inventory(string isbn,string title,string author,int edition,string editorial,string year,string genre,string? comments,double price,int quantity) : base(isbn, title, author, edition, editorial, year, genre, comments, price)
         {
             Quantity = quantity;
-            Price = price;
         }
 
-        public void Add()
+        public override string DisplayInfo()
         {
-            throw new NotImplementedException();
-        }
-
-        public void Delete()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Search(string searchTerm)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Sum()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Update()
-        {
-            throw new NotImplementedException();
-        }
-
-        public override void UpdateDetails()
-        {
-            throw new NotImplementedException();
+            return $"{ISBN}\n{Title}\n{Author}\n{Edition}\n{Editorial}\n{Year}\n{Genre}\n{Comments}\n{Price}\n{Quantity}";
         }
     }
 }

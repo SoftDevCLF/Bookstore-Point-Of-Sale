@@ -48,7 +48,7 @@ namespace BookstorePointOfSale.DataModel
         }
 
         // Abstract method for updating book details
-        public abstract void UpdateDetails();
+        public abstract string DisplayInfo();
 
 
 
