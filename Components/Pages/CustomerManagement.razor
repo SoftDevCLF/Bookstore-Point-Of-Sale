@@ -1,5 +1,146 @@
-﻿<h3>CustomerManagement</h3>
+﻿@page "/customerManagement"
+@using BookstorePointOfSale.DataViewModel
+@using BookstorePointOfSale.DataModel
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<nav aria-label="breadcrumb" class="bg-secondary bg-opacity-10 rounded-3">
+    <ol class="breadcrumb align-content-center ps-3 pt-1 pb-1">
+        <li class="breadcrumb-item"><a href="/">Home</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Customer Management</li>
+    </ol>
+</nav>
+<hr />
+<h1>Customer Management</h1>
+<hr/>
+<p class="ms-2 text-muted">Welcome to the Customer Management Page</p>
+
+<div class="container">
+    <div class="row">
+        <div class="col-8">
+            <h4>Search for a customer</h4>
+            <form @onsubmit="SearchCustomer">
+
+                <div class="input-group mb-3 ">
+                    <input class="border rounded-1 w-50 ps-3" placeholder="Phone Number (10 digits, no spaces)" @bind="phoneNumber" />
+                    <button class="btn btn-primary" type="submit">Search</button>
+                </div>
+
+            </form>
+        </div>
+
+        <div class="col-4">
+            <h4>Add New Customer</h4>
+            <button @onclick="GoToAddNewCustomerPage" type="button" class="btn btn-primary align-middle">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="align-middle bi bi-person-plus-fill me-2" viewBox="0 0 16 16">
+                    <path d="M1 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6"/>
+                    <path fill-rule="evenodd" d="M13.5 5a.5.5 0 0 1 .5.5V7h1.5a.5.5 0 0 1 0 1H14v1.5a.5.5 0 0 1-1 0V8h-1.5a.5.5 0 0 1 0-1H13V5.5a.5.5 0 0 1 .5-.5"/>
+                </svg> Add New Customer
+            </button>
+
+        </div>
+    </div>
+</div>
+
+<hr>
+
+<div class="col-md-12 border-start border-end border-top align-middle">
+    <p class="mt-3 ms-3">Search Results</p>
+    <table class="table">
+        <thead>
+            <tr>
+                <th class="text-primary border-secondary">Customer ID</th>
+                <th class="text-primary border-secondary">Name</th>
+                <th class="text-primary border-secondary">Email</th>
+                <th class="text-primary border-secondary">Phone Number</th>
+                <th class="text-primary border-secondary align-middle text-center"> Actions </th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (foundCustomer != null)
+            {
+                <tr class="align-middle">
+                    <td >@foundCustomer.CustomerId</td>
+                    <td >@foundCustomer.FirstName @foundCustomer.LastName</td>
+                    <td >@foundCustomer.Email</td>
+                    <td >@foundCustomer.PhoneNumber</td>
+                    <td class="text-center"><button class="btn btn-success" @* @onclick="EditCustomer(foundCustomer.Id)" *@>Start a Sale</button>
+                        <button class="btn btn-primary" @* @onclick="EditCustomer(foundCustomer.Id)" *@>Edit</button>
+                        <button class="btn btn-danger" @* @onclick="EditCustomer(foundCustomer.Id)" *@>Delete</button></td>
+                </tr>
+            }
+
+            else if (foundCustomer == null)
+            {
+                <p>No results found.</p>
+            }
+        </tbody>
+    </table>
+</div>
+
 
 @code {
+
+    string phoneNumber;
+    bool validPhoneNumber;
+    Customer foundCustomer = null;
+    bool found = false;
+
+    /// <summary>
+    /// Search for a customer manager
+    /// </summary>
+    public async Task SearchCustomer() //Async method to search for a customer
+    {
+
+         //Validate the phone number
+
+        if (await ValidatePhoneNumber()) //If the phone number is valid
+        {
+            foundCustomer = CustomerDatabase.Search(phoneNumber); //Search for the customer
+            found = foundCustomer != null; //Set found to true
+            if (!found) //If the customer is not found
+            {
+                await JSAlert("Customer not found.");
+            }
+        }
+
+        phoneNumber = "";
+
+    }
+
+    private async Task<bool> ValidatePhoneNumber() //Method to validate the phone number
+    {
+       
+        if (!phoneNumber.All(char.IsDigit)) //Check if the phone number is numeric
+        {
+            JSAlert("Only numeric values are allowed for phone number.");
+            return false;
+        }
+        else if (String.IsNullOrEmpty(phoneNumber)) //Check if the phone number is empty
+        {
+            JSAlert("Please enter a phone number.");
+			return false;
+        }
+        else if (phoneNumber.Length != 10) //Check if the phone number is 10 digits
+        {
+            JSAlert("Phone number must be 10 digits.");
+			return false;
+        }
+        
+        
+        return true;
+        
+    }
+
+    private void GoToAddNewCustomerPage() //Method to go to the add new customer page
+	{
+		Navigation.NavigateTo("/addNewCustomer");
+        
+	}
+
+    private async Task JSAlert(string message) //Async method to display an alert
+    {
+        await JS.InvokeVoidAsync("alert", message);
+    }
 
 }
