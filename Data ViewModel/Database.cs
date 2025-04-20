@@ -7,15 +7,25 @@ using MySqlConnector;
 
 namespace Library_Manager.Data
 {
+    /// <summary>
+    /// Manager class for Database
+    /// </summary>
     public class Database
     {
-                "ConnectionStrings": {
-            "MariaDB": "Server=yourserver;Database=yourdb;User=youruser;Password=yourpassword;"
-        }
-
-        public MySqlConnection GetConnection()
+        /// <summary>
+        /// Connection string
+        /// </summary>
+        private static readonly string _connectionString = new MySqlConnectionStringBuilder
         {
-            return new MySqlConnection(connectionString);
-        }
+            Server = "localhost",
+            UserID = "root",
+            Password = "12345678",
+            Database = "bookstoredb"
+        }.ConnectionString;
+
+        /// <summary>
+        /// Returns a connection to the database
+        /// </summary>
+        public static MySqlConnection GetConnection() => new MySqlConnection(_connectionString);
     }
 }
