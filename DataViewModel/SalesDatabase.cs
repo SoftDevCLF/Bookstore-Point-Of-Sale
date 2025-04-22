@@ -20,189 +20,164 @@ namespace BookstorePointOfSale.DataViewModel
         /// </summary>
         public SalesDatabase() : base() { }
 
-        /// <summary>
-        /// Retrieves sale details for a book using its ISBN.
-        /// </summary>
-        /// <param name="isbn">The ISBN of the book.</param>
-        /// <returns>Returns a SaleItem object if found, or null if no sale record exists.</returns>
-        public static SaleItem? GetSaleItemByISBN(string isbn)
+
+        //Method to create a sale session
+        public static string CreateSaleSession(int customerId)
         {
             try
             {
-                using (MySqlConnection connection = GetConnection())
+                //Generate new sale ID
+                int saleId = GetNextSaleId(); //Method fetches the next sale ID
+                if (saleId < 0)
+                {
+                    return "Error: Unable to fetch the next sale ID.";
+                }
+                string query = "INSERT INTO sales (sale_id, customer_id, sale_date) VALUES (@saleId, @customerId, @saleDate);";
+                using (var connection = GetConnection())
                 {
                     connection.Open();
-                    string query = "SELECT isbn, quantity_sold, item_price FROM sale_item WHERE isbn = @isbn";
-
-                    using (MySqlCommand command = new MySqlCommand(query, connection))
+                    using (var command = new MySqlCommand(query, connection))
                     {
-                        command.Parameters.AddWithValue("@isbn", isbn);
-
-                        using (MySqlDataReader reader = command.ExecuteReader())
-                        {
-                            if (reader.Read())
-                            {
-                                return new SaleItem(
-                                    reader.GetString("isbn"),
-                                    reader.GetInt32("quantity_sold"),
-                                    reader.GetDecimal("item_price")
-                                );
-                            }
-                            return null;
-                        }
+                        command.Parameters.AddWithValue("@saleId", saleId);
+                        command.Parameters.AddWithValue("@customerId", customerId);
+                        command.Parameters.AddWithValue("@saleDate", DateTime.Now);
+                        command.ExecuteNonQuery();
                     }
                 }
+                return "Sale session created successfully.";
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in GetSaleItemByISBN: {ex.Message}");
-                return null;
+                return $"Error in CreateSaleSession: {ex.Message}";
             }
         }
 
-        /// <summary>
-        /// Removes a book from the sales records.
-        /// </summary>
-        /// <param name="customerId">The customer ID associated with the sale.</param>
-        /// <param name="isbn">The ISBN of the book to be removed.</param>
-        /// <returns>A string message indicating the success or failure of the operation.</returns>
-        public static string RemoveBookFromSales(int customerId, string isbn)
-        {
-            using (MySqlConnection connection = GetConnection()) // Create a connection to the database
-            {
-                connection.Open(); // Open the connection
-
-                // Check if the sale exists before deleting
-                string checkQuery = "SELECT COUNT(*) FROM sales s JOIN sale_item si ON s.sale_id = si.sale_id WHERE s.customer_id = @customerId AND si.isbn = @isbn;";
-                using (MySqlCommand checkCommand = new MySqlCommand(checkQuery, connection))
-                {
-                    checkCommand.Parameters.AddWithValue("@customerId", customerId);
-                    checkCommand.Parameters.AddWithValue("@isbn", isbn);
-
-                    long saleExists = (long)checkCommand.ExecuteScalar();
-                    if (saleExists == 0)
-                    {
-                        return $"No sale found for Customer ID {customerId} with ISBN {isbn}.";
-                    }
-                }
-
-                // Delete the book from the sales record
-                string deleteQuery = "DELETE FROM sales WHERE sale_id IN (SELECT sale_id FROM sale_item WHERE isbn = @isbn AND sale_id IN (SELECT sale_id FROM sales WHERE customer_id = @customerId));";
-                ;
-                using (MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, connection))
-                {
-                    deleteCommand.Parameters.AddWithValue("@customerId", customerId);
-                    deleteCommand.Parameters.AddWithValue("@isbn", isbn);
-
-                    int rowsAffected = deleteCommand.ExecuteNonQuery();
-                    return rowsAffected > 0 ? "Book removed from sales successfully!" : "Failed to remove book from sales.";
-                }
-            }
-        }
-
-        /// <summary>
-        /// Retrieves the next sale ID by finding the highest current sale ID in the sales table.
-        /// </summary>
-        /// <returns>The next available sale ID.</returns>
+        //Method to get next SaleId() Autoincrement
         public static int GetNextSaleId()
         {
             try
             {
-                using (MySqlConnection connection = GetConnection())
+                //Query to get the maximum sale_id from the sales table
+                string query = "SELECT MAX(sale_id) FROM sales;";
+                using (var connection = GetConnection())
                 {
                     connection.Open();
-                    string query = "SELECT MAX(sale_id) FROM sales"; // Get highest sale ID
-
-                    using (MySqlCommand command = new MySqlCommand(query, connection))
+                    using (var command = new MySqlCommand(query, connection))
                     {
                         object result = command.ExecuteScalar();
-
-                        // Ensure the result is a valid integer
-                        if (result == DBNull.Value || result == null)
+                        //If result is not null, increment it by 1
+                        if (result != DBNull.Value)
                         {
-                            return 1; // Start at 1 if no sales exist
+                            return Convert.ToInt32(result) + 1;
                         }
-
-                        return Convert.ToInt32(result) + 1;
+                        else
+                        {
+                            return 1; // If no records exist, start from 1
+                        }
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error fetching Sale ID: {ex.Message}");
-                return -1; // Return -1 to indicate failure
+                Console.WriteLine($"Error in GetNextSaleId: {ex.Message}");
+                return -1; // Indicate an error
             }
         }
 
-        /// <summary>
-        /// Adds books to a customer's sale by inserting a new record into the sales table.
-        /// </summary>
-        /// <param name="customerId">The ID of the customer making the purchase.</param>
-        /// <param name="isbn">The ISBN of the book being purchased.</param>
-        /// <param name="booksQuantity">The number of copies being purchased.</param>
-        /// <param name="saleId">The sale ID for the transaction.</param>
-        /// <returns>A string message indicating the success or failure of the operation.</returns>
-        public static string AddBooksToCustomerSale(int customerId, string isbn, int booksQuantity)
+        //Get sale item using ISBN
+        public static SaleItem? GetSaleItemByISBN(string isbn)
         {
-            using (MySqlConnection connection = GetConnection()) // Create connection
+            try
             {
-                connection.Open(); // Open connection
-
-                int saleId = GetNextSaleId(); // Fetch the next available sale ID from the database
-
-                // Check if the customer exists
-                string customerQuery = "SELECT COUNT(*) FROM customer WHERE customer_id = @customerId";
-                using (MySqlCommand customerCommand = new MySqlCommand(customerQuery, connection))
+                using (var connection = GetConnection())
                 {
-                    customerCommand.Parameters.AddWithValue("@customerId", customerId);
-                    long customerExists = (long)customerCommand.ExecuteScalar();
-                    if (customerExists == 0)
+                    connection.Open();
+
+                    // Query to fetch sale item details by ISBN, including sale_id
+                    string query = "SELECT sale_item_id, sale_id, quantity_sold, item_price FROM sale_item WHERE isbn = @isbn";
+
+                    using (var command = new MySqlCommand(query, connection))
                     {
-                        return $"Customer ID {customerId} not found.";
+                        command.Parameters.AddWithValue("@isbn", isbn.Trim()); // Clean up any whitespace from ISBN
+
+                        using (var reader = command.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                // Use explicit casting to avoid conflicts
+                                int saleItemId = reader.GetInt32(0);
+                                int saleId = reader.GetInt32(1);
+                                int quantitySold = reader.GetInt32(2);
+                                decimal itemPrice = reader.GetDecimal(3);
+
+                                return new SaleItem(saleItemId, isbn, quantitySold, itemPrice)
+                                {
+                                    SaleId = saleId
+                                };
+                            }
+
+                        }
                     }
                 }
-
-                // Check if the book exists and get unit price
-                double unitPrice = 0;
-                string bookQuery = "SELECT unit_price FROM book WHERE isbn = @isbn";
-                using (MySqlCommand bookCommand = new MySqlCommand(bookQuery, connection))
-                {
-                    bookCommand.Parameters.AddWithValue("@isbn", isbn);
-                    object result = bookCommand.ExecuteScalar();
-
-                    if (result == null)
-                    {
-                        return $"Book with ISBN {isbn} not found.";
-                    }
-                    unitPrice = Convert.ToDouble(result);
-                }
-
-                // Calculate total sale amount
-                double totalAmount = unitPrice * booksQuantity;
-
-                // Insert the sale with generated sale ID
-                string insertQuery = "INSERT INTO sale_item(sale_id, isbn, quantity_sold, item_price) VALUES(@saleId, @isbn, @quantitySold, @itemPrice)";
-                ;
-
-                using (MySqlCommand command = new MySqlCommand(insertQuery, connection))
-                {
-                    command.Parameters.AddWithValue("@saleId", saleId); // Use dynamically generated sale ID
-                    command.Parameters.AddWithValue("@customerId", customerId);
-                    command.Parameters.AddWithValue("@isbn", isbn);
-                    command.Parameters.AddWithValue("@saleDate", DateTime.Now);
-                    command.Parameters.AddWithValue("@quantitySold", booksQuantity);
-                    command.Parameters.AddWithValue("@totalSale", totalAmount);
-
-                    int rowsAffected = command.ExecuteNonQuery();
-
-                    return rowsAffected > 0 ? "Sale added successfully!" : $"Failed to add sale for ISBN {isbn}.";
-                }
+                // Return null if no sale item is found
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetSaleItemByISBN: {ex.Message}");
+                return null; // Return null to indicate failure
             }
         }
+
+        //Method to add books to the cart
+        public static string AddBookToCart(int saleId, string isbn, int quantitySold, decimal itemPrice)
+        {
+            try
+            {
+                if (saleId <= 0) //Validate saleId
+                {
+                    return "Error: Invalid sale ID.";
+                }
+
+                string query = "INSERT INTO sale_item (sale_id, isbn, quantity_sold, item_price) VALUES (@saleId, @isbn, @quantitySold, @itemPrice);";
+                using (var connection = GetConnection())
+                {
+                    connection.Open();
+                    using (var command = new MySqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@saleId", saleId);
+                        command.Parameters.AddWithValue("@isbn", isbn.Trim()); // Clean up any whitespace from ISBN
+                        command.Parameters.AddWithValue("@quantitySold", quantitySold);
+                        command.Parameters.AddWithValue("@itemPrice", itemPrice);
+
+                        int rowsAffected = command.ExecuteNonQuery();
+                        if (rowsAffected > 0)
+                        {
+                            // Clear success message
+                            return "The book was added to the cart successfully.";
+                        }
+                        else
+                        {
+                            // Clear failure message
+                            return "The book could not be added to the cart. Please try again.";
+
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in AddBookToCart: {ex.Message}");
+                return $"Error in AddBookToCart: {ex.Message}";
+            }
+        }
+
+
+
+
+
+
 
 
     }
 }
-
-
-

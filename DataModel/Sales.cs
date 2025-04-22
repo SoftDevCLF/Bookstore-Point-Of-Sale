@@ -58,36 +58,10 @@ namespace Library_Manager.Data
         {
             SaleId = saleId;
             CustomerId = customerId;
-            SaleDate = DateTime.Now;
+            SaleDate = saleDate;
             Items = new List<SaleItem>();
             Customers = new List<Customer>();
             Books = new List<Book>();
         }
-
-        /// <summary>
-        /// Calculates the total amount of the sale by summing the price of each item
-        /// </summary>
-        public void CalculateTotalAmount()
-        {
-            TotalAmount = 0;
-            foreach (var item in Items)
-            {
-                TotalAmount = Items.Sum(item => item.ItemPrice * item.QuantitySold);
-            }
-        }
-
-        /// <summary>
-        /// Caclulate the total book quantity of books
-        /// </summary>
-        public int GetTotalBookQuantity()
-        {
-            int totalQuantity = 0;
-            foreach (var item in Items)
-            {
-                totalQuantity += item.QuantitySold;
-            }
-            return totalQuantity;
-        }
-
     }
 }
