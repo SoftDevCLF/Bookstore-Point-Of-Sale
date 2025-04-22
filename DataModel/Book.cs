@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using MySqlConnector;
 
 namespace BookstorePointOfSale.DataModel
 {
@@ -49,9 +50,6 @@ namespace BookstorePointOfSale.DataModel
 
         // Abstract method for updating book details
         public abstract string DisplayInfo();
-
-
-
 
 
 
