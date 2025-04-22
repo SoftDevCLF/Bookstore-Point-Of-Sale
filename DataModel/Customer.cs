@@ -14,7 +14,7 @@ namespace BookstorePointOfSale.DataModel
         /// <summary>
         /// Property for customer id
         /// </summary>
-        public int CustomerId { get; set; }
+        public int CustomerId { get; set; } 
 
         /// <summary>
         /// Property for customer first name
@@ -41,6 +41,8 @@ namespace BookstorePointOfSale.DataModel
         /// </summary>
         public List<Sales> Sales = new List<Sales>();
 
+        public Customer() { }
+
         /// <summary>
         /// Constructs Customer object
         /// </summary>
@@ -59,7 +61,7 @@ namespace BookstorePointOfSale.DataModel
         }
 
         /// <summary>
-        /// Constructs Customer object
+        /// Constructs Customer object to add to database
         /// </summary>
         /// <param name="firstName">Customer first name</param>
         /// <param name="lastName">Customer last name</param>
@@ -74,4 +76,3 @@ namespace BookstorePointOfSale.DataModel
         }
     }
 }
-
