@@ -65,7 +65,7 @@
                     <td >@foundCustomer.Email</td>
                     <td >@foundCustomer.PhoneNumber</td>
                     <td class="text-center"><button class="btn btn-success" @* @onclick="EditCustomer(foundCustomer.Id)" *@>Start a Sale</button>
-                        <button class="btn btn-primary" @* @onclick="EditCustomer(foundCustomer.Id)" *@>Edit</button>
+                        <button class="btn btn-primary" @onclick="() => GoToUpdateCustomerPage(foundCustomer.CustomerId)">Edit</button>
                         <button class="btn btn-danger" @* @onclick="EditCustomer(foundCustomer.Id)" *@>Delete</button></td>
                 </tr>
             }
@@ -135,6 +135,13 @@
     private void GoToAddNewCustomerPage() //Method to go to the add new customer page
 	{
 		Navigation.NavigateTo("/addNewCustomer");
+        
+	}
+
+    private async void GoToUpdateCustomerPage(int customerId) //Method to go to the add new customer page
+	{
+        JSAlert("Customer ID: " + customerId);
+        Navigation.NavigateTo($"/updatecustomer/{customerId}");
         
 	}
 
