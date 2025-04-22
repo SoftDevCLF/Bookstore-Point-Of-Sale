@@ -59,7 +59,7 @@ namespace BookstorePointOfSale.DataViewModel
         /// </summary>
         /// <param name="customer">Customer object</param>
         /// <returns>Customer ID</returns>
-        public int UpdateCustomer(Customer customer)
+        public static int UpdateCustomer(Customer customer)
         {
             using (MySqlConnection connection = GetConnection())
             {
@@ -98,7 +98,7 @@ namespace BookstorePointOfSale.DataViewModel
         /// </summary>
         /// <param name="customer">Customer object</param>
         /// <returns>True if successful, false if not</returns>
-        public bool DeleteCustomer(Customer customer)
+        public static bool DeleteCustomer(Customer customer)
         {
             using (MySqlConnection connection = GetConnection())
             {
@@ -150,6 +150,42 @@ namespace BookstorePointOfSale.DataViewModel
                     reader.Close();
                 }
         
+            }
+
+            return customer;
+        }
+    
+
+        /// <summary>
+        /// Gets a customer by their ID
+        /// </summary>
+        /// <param name="customerId">Customer ID</param>
+        /// <returns>Customer object</returns>
+        public static Customer? GetCustomerById(int customerId)
+        {
+            Customer? customer = null;
+
+            using (MySqlConnection connection = GetConnection())
+            {
+                connection.Open();
+                string sql = "SELECT * FROM customer WHERE customer_id = @customerId";
+                using (MySqlCommand command = new MySqlCommand(sql, connection))
+                {
+                    command.Parameters.AddWithValue("@customerId", customerId);
+                    using (MySqlDataReader reader = command.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            customer = new Customer(
+                                reader.GetInt32("customer_id"),
+                                reader.GetString("first_name"),
+                                reader.GetString("last_name"),
+                                reader.GetString("email"),
+                                reader.GetString("phone")
+                            );
+                        }
+                    }
+                }
             }
 
             return customer;
