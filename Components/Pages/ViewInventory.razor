@@ -1,0 +1,73 @@
+﻿@page "/viewInventory"
+@using BookstorePointOfSale.DataModel
+@using BookstorePointOfSale.DataViewModel
+
+<nav aria-label="breadcrumb" class="bg-secondary bg-opacity-10 rounded-3">
+	<ol class="breadcrumb align-content-center ps-3 pt-1 pb-1">
+		<li class="breadcrumb-item"><a href="/">Home</a></li>
+		<li class="breadcrumb-item"><a href="/inventoryManagement">Inventory Management</a></li>
+		<li class="breadcrumb-item active" aria-current="page">View All Inventory</li>
+	</ol>
+</nav>
+
+<hr/>
+
+<h1>View All Inventory</h1>
+
+<hr/>
+
+@if (!isLoaded)
+{
+	<p class="text-muted">Loading inventory...</p>
+}
+else if (inventoryList.Count == 0)
+{
+	<p class="text-danger">No inventory found.</p>
+}
+else
+{
+	<table class="table table-striped">
+		<thead class="table-dark">
+			<tr>
+				<th>ISBN</th>
+				<th>Title</th>
+				<th>Author</th>
+				<th>Edition</th>
+				<th>Editorial</th>
+				<th>Genre</th>
+				<th>Year</th>
+				<th>Comments</th>
+				<th>Price</th>
+				<th>Quantity</th>
+			</tr>
+		</thead>
+		<tbody>
+			@foreach (Inventory item in inventoryList)
+			{
+				<tr>
+					<td>@item.ISBN</td>
+					<td>@item.Title</td>
+					<td>@item.Author</td>
+					<td>@item.Edition</td>
+					<td>@item.Editorial</td>
+					<td>@item.Genre</td>
+					<td>@item.Year</td>
+					<td>@item.Comments</td>
+					<td>@item.Price</td>
+					<td>@item.Quantity</td>
+				</tr>	
+			}
+		</tbody>
+	</table>	
+}
+
+@code {
+	private List<Inventory> inventoryList = new List<Inventory>();
+	private bool isLoaded = false;
+
+	protected override async Task OnInitializedAsync()
+	{
+		inventoryList = await Task.Run(() => InventoryDatabase.GetAllBooks());
+		isLoaded = true;
+	}
+}
