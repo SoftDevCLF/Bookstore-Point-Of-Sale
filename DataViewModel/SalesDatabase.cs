@@ -33,7 +33,6 @@ namespace BookstorePointOfSale.DataViewModel
                     using (var command = new MySqlCommand(query, connection))
                     {
                         command.Parameters.AddWithValue("@customerId", customerId);
-
                         // ExecuteScalar retrieves the LAST_INSERT_ID
                         return Convert.ToInt32(command.ExecuteScalar());
                     }
@@ -46,257 +45,190 @@ namespace BookstorePointOfSale.DataViewModel
             }
         }
 
-        //Method to get next SaleId() Autoincrement
-        public static int GetNextSaleId()
+        //Method to add sale item
+        public static bool AddSaleItem(int saleId, string isbn, int quantitySold, decimal itemPrice)
         {
             try
             {
-                //Query to get the maximum sale_id from the sales table
-                string query = "SELECT MAX(sale_id) FROM sales;";
+                string query = "INSERT INTO sale_item (sale_id, isbn, quantity_sold, item_price) VALUES (@saleId, @isbn, @quantitySold, @itemPrice);";
                 using (var connection = GetConnection())
                 {
                     connection.Open();
                     using (var command = new MySqlCommand(query, connection))
                     {
-                        object result = command.ExecuteScalar();
-                        //If result is not null, increment it by 1
-                        if (result != DBNull.Value)
-                        {
-                            return Convert.ToInt32(result) + 1;
-                        }
-                        else
-                        {
-                            return 1; // If no records exist, start from 1
-                        }
+                        command.Parameters.AddWithValue("@saleId", saleId);
+                        command.Parameters.AddWithValue("@isbn", isbn);
+                        command.Parameters.AddWithValue("@quantitySold", quantitySold);
+                        command.Parameters.AddWithValue("@itemPrice", itemPrice);
+
+                        // Execute the command and check if it was successful
+                        int rowsAffected = command.ExecuteNonQuery();
+                        return rowsAffected > 0; //Return true if rows were affected
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in GetNextSaleId: {ex.Message}");
-                return -1; // Indicate an error
+                Console.WriteLine($"Error in AddSaleItem: {ex.Message}");
+                return false; // Return false to indicate failure
             }
         }
 
-        //Get sale item using ISBN
-        public static SaleItem? GetSaleItemByISBN(string isbn)
+        //Method to retrieve sale item using ISBN
+        public static SaleItem? GetSaleItemByIsbn(string isbn)
         {
             try
             {
-                using (var connection = GetConnection())
+                SaleItem? saleItem = null;
+
+                using (MySqlConnection connection = GetConnection())
                 {
                     connection.Open();
 
-                    // Query to fetch sale item details by ISBN, including sale_id
-                    string query = "SELECT sale_item_id, sale_id, quantity_sold, item_price FROM sale_item WHERE isbn = @isbn";
+                    string query = "SELECT s.isbn, s.quantity_sold, s.item_price FROM sale_item s WHERE s.isbn = @isbn;";
 
-                    using (var command = new MySqlCommand(query, connection))
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
                     {
-                        command.Parameters.AddWithValue("@isbn", isbn.Trim()); // Clean up any whitespace from ISBN
-
-                        using (var reader = command.ExecuteReader())
+                        command.Parameters.AddWithValue("@isbn", isbn);
+                        using (MySqlDataReader reader = command.ExecuteReader())
                         {
                             if (reader.Read())
                             {
-                                // Use explicit casting to avoid conflicts
-                                int saleItemId = reader.GetInt32(0);
-                                int saleId = reader.GetInt32(1);
-                                int quantitySold = reader.GetInt32(2);
-                                decimal itemPrice = reader.GetDecimal(3);
-
-                                return new SaleItem(saleItemId, isbn, quantitySold, itemPrice)
-                                {
-                                    SaleId = saleId
-                                };
+                                // Create a SaleItem object and populate it with data from the database
+                                saleItem = new SaleItem(
+                                    reader.GetString(0), // isbn
+                                    reader.GetInt32(1), // quantity_sold
+                                    reader.GetDecimal(2) // item_price
+                                );
                             }
-
                         }
                     }
                 }
-                // Return null if no sale item is found
-                return null;
+                return saleItem; // Return the SaleItem object
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in GetSaleItemByISBN: {ex.Message}");
+                Console.WriteLine($"Error in GetSaleItemByIsbn: {ex.Message}");
                 return null; // Return null to indicate failure
             }
         }
 
-        //Method to Calculate Total Quantity For Sale
-        public static int CalculateTotalQuantityForSale(int saleId)
+        //Method to Confirm Sale
+        public static bool ConfirmSale(int saleId)
         {
             try
             {
+                string query = @"
+            UPDATE sales 
+            SET total_sale = (
+                SELECT IFNULL(SUM(quantity_sold * item_price), 0) 
+                FROM sale_item 
+                WHERE sale_id = @saleId
+            ) 
+            WHERE sale_id = @saleId;";
+
                 using (var connection = GetConnection())
                 {
                     connection.Open();
-                    // Query to calculate the total quantity of items sold in a sale
-                    string query = "SELECT SUM(quantity_sold) FROM sale_item WHERE sale_id = @saleId";
                     using (var command = new MySqlCommand(query, connection))
                     {
                         command.Parameters.AddWithValue("@saleId", saleId);
-                        object result = command.ExecuteScalar();
-                        if (result != DBNull.Value)
-                        {
-                            return Convert.ToInt32(result);
-                        }
+                        int rowsAffected = command.ExecuteNonQuery();
+                        return rowsAffected > 0;
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in CalculateTotalQuantityForSale: {ex.Message}");
-            }
-            return 0; // Return 0 if an error occurs or no records are found
-        }
-
-        //Method to Calculate Total Sale Amount
-        public static int CalculateTotalAmountForSale(int saleId)
-        {
-            try
-            {
-                using (var connection = GetConnection())
-                {
-                    connection.Open();
-                    // Query to calculate the total sale amount for a sale
-                    string query = "SELECT SUM(quantity_sold * item_price) FROM sale_item WHERE sale_id = @saleId";
-                    using (var command = new MySqlCommand(query, connection))
-                    {
-                        command.Parameters.AddWithValue("@saleId", saleId);
-                        object result = command.ExecuteScalar();
-                        if (result != DBNull.Value)
-                        {
-                            return Convert.ToInt32(result);
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in CalculateTotalSaleAmountForSale: {ex.Message}");
-            }
-            return 0; // Return 0 if an error occurs or no records are found
-        }
-
-
-        //Method to confirm sale
-        public static string ConfirmSale(int saleId)
-        {
-            try
-            {
-                //Calculate totals
-                int totalQuantity = CalculateTotalQuantityForSale(saleId);
-                decimal totalCost = CalculateTotalAmountForSale(saleId);
-
-                //Update the sales table with the total cost
-                string updateSaleQuery = "UPDATE sales SET total_sale = @totalCost WHERE sale_id = @saleId;";
-                using (var connection = GetConnection())
-                {
-                    connection.Open();
-                    using (var command = new MySqlCommand(updateSaleQuery, connection))
-                    {
-                        command.Parameters.AddWithValue("@totalCost", totalCost);
-                        command.Parameters.AddWithValue("@saleId", saleId);
-                        command.ExecuteNonQuery();
-                    }
-                }
-
-                //Update inventory
-                UpdateInventory(saleId);
-
-                //Generate receipt
-                string receipt = GenerateReceipt(saleId);
-
-                // Return confirmation message and receipt
-                return $"Sale confirmed successfully!\n\n{receipt}";
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error in ConfirmSale: {ex.Message}");
-                return $"Error confirming sale: {ex.Message}";
+                return false;
             }
         }
 
-        //Method to generate receipt
+
+        //Method to Cancel Sale
+        public static bool CancelSale(int saleId)
+        {
+            try
+            {
+                using (var connection = GetConnection())
+                {
+                    connection.Open();
+
+                    // Delete sale items first due to FK constraints
+                    string deleteItems = "DELETE FROM sale_item WHERE sale_id = @saleId;";
+                    using (var deleteItemsCommand = new MySqlCommand(deleteItems, connection))
+                    {
+                        deleteItemsCommand.Parameters.AddWithValue("@saleId", saleId);
+                        deleteItemsCommand.ExecuteNonQuery();
+                    }
+
+                    // Then delete the sale itself
+                    string deleteSale = "DELETE FROM sales WHERE sale_id = @saleId;";
+                    using (var deleteSaleCommand = new MySqlCommand(deleteSale, connection))
+                    {
+                        deleteSaleCommand.Parameters.AddWithValue("@saleId", saleId);
+                        int rowsAffected = deleteSaleCommand.ExecuteNonQuery();
+                        return rowsAffected > 0;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in CancelSale: {ex.Message}");
+                return false;
+            }
+        }
+
+
+        //Method to Generate A Receipt
         public static string GenerateReceipt(int saleId)
         {
             try
             {
-                StringBuilder receipt = new StringBuilder();
-                receipt.AppendLine($"Receipt for Sale ID: {saleId}");
-                receipt.AppendLine("--------------------------------------------------");
-                // Fetch sale items
-                string query = "SELECT isbn, quantity_sold, item_price FROM sale_item WHERE sale_id = @saleId;";
+                string query = "SELECT s.sale_id, s.sale_date, s.total_sale, c.customer_name, i.isbn, i.quantity_sold, i.item_price " +
+                               "FROM sales s " +
+                               "JOIN customer c ON s.customer_id = c.customer_id " +
+                               "JOIN sale_item i ON s.sale_id = i.sale_id " +
+                               "WHERE s.sale_id = @saleId;";
                 using (var connection = GetConnection())
                 {
-                    connection.Open();
-                    using (var command = new MySqlCommand(query, connection))
                     {
-                        command.Parameters.AddWithValue("@saleId", saleId);
-                        using (var reader = command.ExecuteReader())
+                        connection.Open();
+                        using (var command = new MySqlCommand(query, connection))
                         {
-                            while (reader.Read())
+                            command.Parameters.AddWithValue("@saleId", saleId);
+                            using (var reader = command.ExecuteReader())
                             {
-                                string isbn = reader.GetString("isbn");
-                                int quantitySold = reader.GetInt32("quantity_sold");
-                                decimal itemPrice = reader.GetDecimal("item_price");
-                                receipt.AppendLine($"ISBN: {isbn}, Quantity Sold: {quantitySold}, Item Price: {itemPrice:C}");
+                                StringBuilder receipt = new StringBuilder();
+                                receipt.AppendLine($"Sale ID: {reader["sale_id"]}");
+                                receipt.AppendLine($"Customer Name: {reader["customer_name"]}");
+                                receipt.AppendLine($"Sale Date: {reader["sale_date"]}");
+                                receipt.AppendLine("Items Sold:");
+                                decimal totalAmount = 0;
+                                while (reader.Read())
+                                {
+                                    string isbn = reader["isbn"].ToString();
+                                    int quantitySold = Convert.ToInt32(reader["quantity_sold"]);
+                                    decimal itemPrice = Convert.ToDecimal(reader["item_price"]);
+                                    totalAmount += quantitySold * itemPrice;
+                                    receipt.AppendLine($"ISBN: {isbn}, Quantity: {quantitySold}, Price: {itemPrice:C}");
+                                }
+                                receipt.AppendLine($"Total Amount: {totalAmount:C}");
+                                return receipt.ToString();
                             }
                         }
                     }
                 }
-                // Fetch total cost
-                decimal totalCost = CalculateTotalAmountForSale(saleId);
-                receipt.AppendLine($"--------------------------------------------------");
-                receipt.AppendLine($"Total Cost: {totalCost:C}");
-                return receipt.ToString();
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error in GenerateReceipt: {ex.Message}");
-                return $"Error generating receipt: {ex.Message}";
-            }
-        }
-
-
-        // Method to process sale items  stock
-        public static void UpdateInventory(int saleId)
-        {
-            try
-            {
-                // Retrieve sale items for the given sale ID
-                string query = "SELECT isbn, quantity_sold FROM sale_item WHERE sale_id = @saleId;";
-                using (var connection = GetConnection())
-                {
-                    connection.Open();
-                    using (var command = new MySqlCommand(query, connection))
-                    {
-                        command.Parameters.AddWithValue("@saleId", saleId);
-                        using (var reader = command.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                string isbn = reader.GetString("isbn");
-                                int quantitySold = reader.GetInt32("quantity_sold");
-
-                                // Log or process the sale item without updating inventory
-                                Console.WriteLine($"Processing Sale Item - ISBN: {isbn}, Quantity Sold: {quantitySold}");
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in ProcessSaleItems: {ex.Message}");
+                return string.Empty; // Return empty string to indicate failure
             }
         }
     }
 }
-
-
-
 
 
 

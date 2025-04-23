@@ -4,171 +4,200 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 
-<!--BreadCrumb Navigation-->
-<nav aria-label="breadcrumb" class="bg-secondary bg-opacity-10 rounded-3">
-    <ol class="breadcrumb align-content-center ps-3 pt-1 pb-1">
-        <li class="breadcrumb-item"><a href="/">Home</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Sale Reports</li>
-    </ol>
-</nav>
-<hr />
-<h1>Sales</h1>
-<hr />
-<p class="ms-2 text-muted">Welcome to the Sales Homepage</p>
+<!-- Breadcrumb Navigation -->
+<div class="container mt-3">
+    <nav aria-label="breadcrumb" class="bg-secondary bg-opacity-10 rounded-3">
+        <ol class="breadcrumb align-content-center ps-3 pt-1 pb-1">
+            <li class="breadcrumb-item"><a href="/">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Sale Reports</li>
+        </ol>
+    </nav>
+    <hr />
+    <h1>Sales</h1>
+    <hr />
+    <p class="ms-2 text-muted">Welcome to the Sales Homepage</p>
 
-<h3>Make A Sale</h3>
-<!--Find the Customer to sell to-->
-<p>Fill out the information below for your sale</p>
+    <h3>Start a New Sale Session</h3>
+    <!-- Customer ID Input -->
+    <div class="mb-3">
+        <label class="form-label">Customer ID:</label>
+        <input type="number" @bind="customerId" class="form-control" />
+    </div>
+    <button class="btn btn-primary mb-3" @onclick="CreateSaleSession">Start Sale Session</button>
 
-<!--Customer ID Input-->
-<div class="form-group">
-    <label>Customer ID:</label>
-    <input type="number" @bind="customerId" class="form-control" />
-</div>
+    @if (!string.IsNullOrEmpty(statusMessage))
+    {
+        <p class="alert alert-info">@statusMessage</p>
+    }
 
-<!--Sale Session Buttin-->
-<button class="btn btn-primary" @onclick="CreateSaleSession">Click here to start a sale session</button>
-@if (!string.IsNullOrEmpty(statusMessage))
-{
-    <p class="alert alert-info">@statusMessage</p>
-}
-<!--ISBN Input-->
-<div class="form-group">
-    <label>ISBN:</label>
-    <input type="text" @bind="isbn" class="form-control" />
-</div>
+    <h3>Add Items to Sale</h3>
+    <!-- ISBN Input -->
+    <div class="mb-3">
+        <label class="form-label">ISBN:</label>
+        <input type="text" @bind="isbn" class="form-control" />
+    </div>
+    <!-- Quantity Input -->
+    <div class="mb-3">
+        <label class="form-label">Quantity:</label>
+        <input type="number" @bind="quantitySold" class="form-control" />
+    </div>
+    <button class="btn btn-success mb-3" @onclick="AddSaleItem">Add Item to Sale</button>
 
-<!-- Quantity Input -->
-<div class="form-group">
-    <label>Quantity:</label>
-    <input type="number" @bind="quantity" class="form-control" />
-</div>
-
-<!-- Add Book to Sale Button -->
-<button class="btn btn-success" @onclick="AddBookToSale">Add Book to Sale</button>
-
-<!-- Display Sale Items -->
-@if (saleItems != null && saleItems.Count > 0)
-{
-    <h3>Sale Items</h3>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>ISBN</th>
-                <th>Title</th>
-                <th>Quantity</th>
-                <th>Price</th>
-                <th>Total</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in saleItems)
-            {
+    @if (saleItems != null && saleItems.Count > 0)
+    {
+        <h3>Current Sale Items</h3>
+        <table class="table">
+            <thead>
                 <tr>
-                    <td>@item.ISBN</td>
-                    <td>@item.Title</td>
-                    <td>@item.QuantitySold</td>
-                    <td>@item.ItemPrice</td>
-                    <td>@(item.QuantitySold * item.ItemPrice)</td>
+                    <th>ISBN</th>
+                    <th>Quantity</th>
+                    <th>Unit Price</th>
+                    <th>Total</th>
                 </tr>
-            }
-        </tbody>
-    </table>
-}
+            </thead>
+            <tbody>
+                @foreach (var item in saleItems)
+                {
+                    <tr>
+                        <td>@item.ISBN</td>
+                        <td>@item.QuantitySold</td>
+                        <td>@item.ItemPrice:C</td>
+                        <td>@(item.QuantitySold * item.ItemPrice):C</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <button class="btn btn-warning me-2" @onclick="ConfirmSale">Confirm Sale</button>
+        <button class="btn btn-danger" @onclick="CancelSale">Cancel Sale</button>
+    }
 
-<!-- Confirm Sale Button -->
-@if (saleItems != null && saleItems.Count > 0)
-{
-    <button class="btn btn-warning" @onclick="ConfirmSale">Confirm Sale</button>
-}
-
-
+    @if (!string.IsNullOrEmpty(receipt))
+    {
+        <h3>Receipt</h3>
+        <pre class="border rounded bg-light p-3">@receipt</pre>
+    }
+</div>
 
 @code {
     private int customerId;
     private string isbn;
-    private int quantity;
+    private int quantitySold;
+    private decimal itemPrice;
     private string statusMessage;
+    private string receipt;
     private int saleId; // Current Sale ID
-	private string receipt; // Receipt details
     private List<SaleItem> saleItems = new(); // Holds Sale Items
 
-    //Alert Method
-    private async Task JSAlert(string message)
-    {
-        await JS.InvokeVoidAsync("alert", message);
-    }
-
-    //Start the sale session
-    private async Task StartSaleSession()
+    //Begin the sale process
+    private async Task CreateSaleSession()
     {
         if (customerId <= 0)
         {
-            await JSAlert("Please enter a valid Customer ID.");
+            await JS.InvokeVoidAsync("alert", "Please enter a valid customer ID.");
+            return;
+        }
+        saleId = SalesDatabase.CreateSaleSession(customerId);
+        statusMessage = saleId > 0 ? "Sale session created successfully." : "Failed to create sale session.";
+    }
+
+
+    //Add Book to Sale
+    private async Task AddSaleItem()
+    {
+        if (saleId <= 0)
+        {
+            await JS.InvokeVoidAsync("alert", "Please create a sale session first.");
+            return;
+        }
+        if (string.IsNullOrEmpty(isbn))
+        {
+            await JS.InvokeVoidAsync("alert", "Please enter a valid ISBN.");
             return;
         }
 
-        saleId = SalesDatabase.CreateSaleSession(customerId); // Create a new sale session
-        statusMessage = $"Sale session started! Sale ID: {saleId}";
-        await JSAlert(statusMessage);
+        if (quantitySold <= 0)
+        {
+            await JS.InvokeVoidAsync("alert", "Please enter a quantity greater than 0.");
+            return;
+        }
+        var book = SalesDatabase.GetSaleItemByIsbn(isbn);
+		if (book == null)
+		{
+			await JS.InvokeVoidAsync("alert", "Book not found.");
+			return;
+		}
+
+		itemPrice = book.ItemPrice;
+
+        var result = SalesDatabase.AddSaleItem(saleId, isbn, quantitySold, itemPrice);
+        if (result)
+        {
+            //Refresh Sale Items
+            var item = SalesDatabase.GetSaleItemByIsbn(isbn);
+            if (item != null)
+            {
+                saleItems.Add(item);
+                statusMessage = "Book added to sale successfully.";
+            }
+            else
+            {
+                statusMessage = "Failed to add book to sale.";
+            }
+        }
+        else
+        {
+            statusMessage = "Failed to add book to sale.";
+
+        }
     }
 
-    //Add book to sale
-    // private async Task AddBookToSale()
-    // {
-    //     if (saleId <= 0)
-    //     {
-    //         await JSAlert("Please start a sale session first.");
-    //         return;
-    //     }
-
-    //     if (string.IsNullOrEmpty(isbn) || quantity <= 0)
-    //     {
-    //         await JSAlert("Please enter a valid ISBN and quantity.");
-    //         return;
-    //     }
-
-    //     string result = SalesDatabase.AddBookToCart(saleId, isbn, quantity, GetItemPrice(isbn)); Replace GetItemPrice with your method to fetch price
-    //     if (!result.StartsWith("Error"))
-    //     {
-    //         saleItems = SalesDatabase.GetSaleItemsBySaleId(saleId); Refresh sale items
-    //         statusMessage = "Book added to sale successfully!";
-    //     }
-    //     else
-    //     {
-    //         statusMessage = result;
-    //     }
-    //     await JSAlert(statusMessage);
-    // }
-    //Confirm Sale
+    //Confirm the sale
     private async Task ConfirmSale()
     {
         if (saleId <= 0)
         {
-            await JSAlert("No active sale session to confirm.");
+            await JS.InvokeVoidAsync("alert", "Please create a sale session first.");
             return;
         }
-
-        string result = SalesDatabase.ConfirmSale(saleId);
-        if (!result.StartsWith("Error"))
+        if (saleItems.Count == 0)
         {
-            statusMessage = "Sale confirmed successfully!";
-            saleItems.Clear(); // Clear sale items
-            saleId = 0; // Reset sale session
-
-            // Generate the receipt
-            receipt = SalesDatabase.GenerateReceipt(saleId); // Fetch receipt de
-
+            await JS.InvokeVoidAsync("alert", "No items in the sale.");
+            return;
+        }
+        var result = SalesDatabase.ConfirmSale(saleId);
+        if (result)
+        {
+            receipt = SalesDatabase.GenerateReceipt(saleId);
+            statusMessage = "Sale confirmed successfully.";
+            saleId = 0; // Reset sale ID after confirmation
+            saleItems.Clear(); // Clear sale items after confirmation
         }
         else
         {
-            statusMessage = result;
+            statusMessage = "Failed to confirm sale.";
         }
-        await JSAlert(statusMessage);
     }
-
+    //Cancel the sale
+    private async Task CancelSale()
+    {
+		if (saleId <= 0)
+		{
+			await JS.InvokeVoidAsync("alert", "Please create a sale session first.");
+			return;
+		}
+		var result = SalesDatabase.CancelSale(saleId);
+        if (result)
+		{
+			statusMessage = "Sale cancelled successfully!";
+			saleId = 0; // Reset sale ID after cancellation
+			saleItems.Clear(); // Clear sale items after cancellation
+		}
+		else
+		{
+			statusMessage = "Failed to cancel sale.";
+		}
+    }
 }
-    
 
 
 

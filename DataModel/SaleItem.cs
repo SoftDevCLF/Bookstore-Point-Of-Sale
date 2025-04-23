@@ -12,14 +12,6 @@ namespace BookstorePointOfSale.DataModel
     public class SaleItem
     {
         /// <summary>
-        /// Represents the unique identifier for the sale item
-        /// </summary>
-        public int SaleItemId { get; set; }
-        /// <summary>
-        /// Property for ISBN of the sold item
-        /// </summary>
-
-        /// <summary>
         /// Represents SaleId Linked to this item
         /// </summary>
         public int SaleId { get; set; }
@@ -50,9 +42,8 @@ namespace BookstorePointOfSale.DataModel
         /// <param name="isbn">ISBN of the book</param>
         /// <param name="quantitySold">Quantity of the book sold</param>
         /// <param name="price">Unit price of the book</param>
-        public SaleItem(int saleItemId, string isbn, int quantitySold, decimal itemPrice)
+        public SaleItem(string isbn, int quantitySold, decimal itemPrice)
         {
-            SaleItemId = saleItemId; 
             ISBN = isbn;
             QuantitySold = quantitySold;
             ItemPrice = itemPrice;
