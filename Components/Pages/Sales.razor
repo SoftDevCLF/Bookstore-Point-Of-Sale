@@ -50,6 +50,7 @@
             <thead>
                 <tr>
                     <th>ISBN</th>
+                    <th>Book Title</th>
                     <th>Quantity</th>
                     <th>Unit Price</th>
                     <th>Total</th>
@@ -60,23 +61,32 @@
                 {
                     <tr>
                         <td>@item.ISBN</td>
+						@* <td>@item.Title</td> *@
                         <td>@item.QuantitySold</td>
-                        <td>@item.ItemPrice:C</td>
-                        <td>@(item.QuantitySold * item.ItemPrice):C</td>
+                        <td>$@item.ItemPrice</td>
+                        <td>@(item.QuantitySold * item.ItemPrice)</td>
                     </tr>
                 }
             </tbody>
         </table>
         <button class="btn btn-warning me-2" @onclick="ConfirmSale">Confirm Sale</button>
         <button class="btn btn-danger" @onclick="CancelSale">Cancel Sale</button>
-    }
 
-    @if (!string.IsNullOrEmpty(receipt))
-    {
+        <br/>
+
+        <!-- Generate Receipt Button -->
         <h3>Receipt</h3>
-        <pre class="border rounded bg-light p-3">@receipt</pre>
+        <button class="btn btn-warning me-2" @onclick="GenerateReceipt">Click here to view your receipt</button>
+
+        @if (!string.IsNullOrEmpty(receipt))
+        {
+            <h3>Receipt</h3>
+            <pre class="border rounded bg-light p-3">@receipt</pre>
+        }
     }
 </div>
+}
+
 
 @code {
     private int customerId;
@@ -87,6 +97,7 @@
     private string receipt;
     private int saleId; // Current Sale ID
     private List<SaleItem> saleItems = new(); // Holds Sale Items
+    private List <Book> books = new(); // Holds Customer Details
 
     //Begin the sale process
     private async Task CreateSaleSession()
@@ -121,33 +132,46 @@
             return;
         }
         var book = SalesDatabase.GetSaleItemByIsbn(isbn);
-		if (book == null)
-		{
-			await JS.InvokeVoidAsync("alert", "Book not found.");
-			return;
-		}
+        if (book == null)
+        {
+            await JS.InvokeVoidAsync("alert", "Book not found.");
+            return;
+        }
 
-		itemPrice = book.ItemPrice;
+        itemPrice = book.ItemPrice;
 
-        var result = SalesDatabase.AddSaleItem(saleId, isbn, quantitySold, itemPrice);
+        bool result = SalesDatabase.AddSaleItem(saleId, isbn, quantitySold, itemPrice);
         if (result)
         {
-            //Refresh Sale Items
-            var item = SalesDatabase.GetSaleItemByIsbn(isbn);
-            if (item != null)
+            //Check if the item is already in the in-memory salesitems list
+            SaleItem existingItem = null;
+
+            //Loop through each saleitem to find a match by ISBN
+            foreach (SaleItem item in saleItems)
             {
-                saleItems.Add(item);
-                statusMessage = "Book added to sale successfully.";
+                if (item.ISBN == isbn)
+                {
+                    existingItem = item; //Found an existing match
+                    break; //No need to keep checking the rest
+                }
+            }
+            if (existingItem != null)
+            {
+                //If the item was already added before, increase the quantity
+                existingItem.QuantitySold += quantitySold;
             }
             else
             {
-                statusMessage = "Failed to add book to sale.";
+                //If its a brand new sale item in the sale, add it to the list
+                saleItems.Add(new SaleItem(isbn, quantitySold, itemPrice));
             }
+
+            statusMessage = "Book added to sale successfully.";
         }
+
         else
         {
             statusMessage = "Failed to add book to sale.";
-
         }
     }
 
@@ -180,23 +204,33 @@
     //Cancel the sale
     private async Task CancelSale()
     {
-		if (saleId <= 0)
-		{
-			await JS.InvokeVoidAsync("alert", "Please create a sale session first.");
-			return;
-		}
-		var result = SalesDatabase.CancelSale(saleId);
+        if (saleId <= 0)
+        {
+            await JS.InvokeVoidAsync("alert", "Please create a sale session first.");
+            return;
+        }
+        var result = SalesDatabase.CancelSale(saleId);
         if (result)
-		{
-			statusMessage = "Sale cancelled successfully!";
-			saleId = 0; // Reset sale ID after cancellation
-			saleItems.Clear(); // Clear sale items after cancellation
-		}
-		else
-		{
-			statusMessage = "Failed to cancel sale.";
-		}
+        {
+            statusMessage = "Sale cancelled successfully!";
+            saleId = 0; // Reset sale ID after cancellation
+            saleItems.Clear(); // Clear sale items after cancellation
+        }
+        else
+        {
+            statusMessage = "Failed to cancel sale.";
+        }
     }
+
+    //Generate a Receipt
+    private async Task GenerateReceipt()
+    {
+        receipt = SalesDatabase.GenerateReceipt(saleId);
+		await JS.InvokeVoidAsync("alert", "Receipt generated successfully.");
+		StateHasChanged(); // Refresh the UI to show the receipt
+    }
+
+
 }
 
 

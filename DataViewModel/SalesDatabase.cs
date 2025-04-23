@@ -200,20 +200,28 @@ namespace BookstorePointOfSale.DataViewModel
                             command.Parameters.AddWithValue("@saleId", saleId);
                             using (var reader = command.ExecuteReader())
                             {
+                                if (!reader.Read()) // Check if the reader has any rows
+                                {
+                                    Console.WriteLine("No data found for the given Sale ID.");
+                                    return string.Empty; // No data, return empty receipt
+                                }
+
                                 StringBuilder receipt = new StringBuilder();
                                 receipt.AppendLine($"Sale ID: {reader["sale_id"]}");
                                 receipt.AppendLine($"Customer Name: {reader["customer_name"]}");
                                 receipt.AppendLine($"Sale Date: {reader["sale_date"]}");
                                 receipt.AppendLine("Items Sold:");
                                 decimal totalAmount = 0;
-                                while (reader.Read())
+
+                                do
                                 {
                                     string isbn = reader["isbn"].ToString();
                                     int quantitySold = Convert.ToInt32(reader["quantity_sold"]);
                                     decimal itemPrice = Convert.ToDecimal(reader["item_price"]);
                                     totalAmount += quantitySold * itemPrice;
                                     receipt.AppendLine($"ISBN: {isbn}, Quantity: {quantitySold}, Price: {itemPrice:C}");
-                                }
+                                } while (reader.Read()); // Continue reading all rows
+
                                 receipt.AppendLine($"Total Amount: {totalAmount:C}");
                                 return receipt.ToString();
                             }
