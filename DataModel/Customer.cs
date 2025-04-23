@@ -41,6 +41,9 @@ namespace BookstorePointOfSale.DataModel
         /// </summary>
         public List<Sales> Sales = new List<Sales>();
 
+        /// <summary>
+        /// Default constructor
+        /// </summary>
         public Customer() { }
 
         /// <summary>

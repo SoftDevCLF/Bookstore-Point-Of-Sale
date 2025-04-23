@@ -31,8 +31,8 @@ else
                 <div class="fw-lighter mb-2">
                     <i class="text-danger">*</i> <i>Required</i>
                 </div>
-
-                <form @onsubmit="@(async e => await SaveChanges())">
+                <!--On submit, save changes-->
+                <form @onsubmit="SaveChanges">
                     <div class="mb-3">
                         <label class="form-label">First Name</label>
                         <input class="form-control" @bind="selectedCustomer.FirstName" />
@@ -55,7 +55,7 @@ else
             </div>
 
             <!-- Customer Info Section -->
-            
+
             @if (isUpdated)
             {
                 <div class="col-6 img-thumbnail mb-3">
@@ -81,71 +81,84 @@ else
                         <button class="btn btn-success mt-6">Start a Sale</button>
                         <button class="btn btn-secondary mt-6" @onclick="Cancel">Back to Customer Management</button>
                     </div>
-				</div>
+                </div>
             }
-            
+
         </div>
     </div>
 }
 
 
 @code {
+    //Parameter to hold the customer ID
     [Parameter]
     public int customerId { get; set; }
-
+    //Variables
     private Customer selectedCustomer = new();
     private Customer updatedCustomer = new();
     private bool isUpdated = false;
     private bool isLoaded = false;
 
+    /// <summary>
+    /// Retrieves the customer from the database
+    /// </summary>
     protected override async Task OnParametersSetAsync()
     {
-        selectedCustomer = CustomerDatabase.GetCustomerById(customerId);
+        selectedCustomer = CustomerDatabase.GetCustomerById(customerId);//Get the customer from the database and assign it to the selected customer
 
-        if (selectedCustomer == null)
+        if (selectedCustomer == null) //Check if the customer was found
         {
             JSAlert("Customer not found.");
             Navigation.NavigateTo("/customerManagement");
         }
 
-        isLoaded = true;
+        isLoaded = true; //if the customer was found, set isLoaded to true
     }
 
+    /// <summary>
+    /// Saves changes to the selected customer after validation and confirmation.
+    /// </summary>
+    /// <returns>A task representing the save operation.</returns>
     private async Task SaveChanges()
     {
-        if (!await ValidateName() || !await ValidatePhoneNumber())
+        if (!await ValidateName() || !await ValidatePhoneNumber()) //Check if the name and phone number are valid
         {
             return;
         }
 
-        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to update this customer?");
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to update this customer?");  //Prompt the user to confirm the update
 
-        if (!confirmed)
+        if (!confirmed) //If the user does not confirm the update, return
         {
-             return;
+            return;
         }
-        else
+        else //If the user confirms the update, update the customer, set isUpdated to true, and clear the selected customer
         {
-           CustomerDatabase.UpdateCustomer(selectedCustomer);
-           updatedCustomer = selectedCustomer;
-           isUpdated = true;
-           selectedCustomer = new Customer();
+            CustomerDatabase.UpdateCustomer(selectedCustomer);
+            updatedCustomer = selectedCustomer;//Set the updated customer to the selected customer
+            isUpdated = true;
+            selectedCustomer = new Customer();
         }
     }
 
+    /// <summary>
+    /// Validates the phone number
+    /// </summary>
+    /// <returns>True if the phone number is valid, false if not</returns>
     private async Task<bool> ValidatePhoneNumber() //Method to validate the phone number
     {
 
-        if (!selectedCustomer.PhoneNumber.All(char.IsDigit)) //Check if the phone number is numeric
-        {
-            JSAlert("Only numeric values are allowed for phone number.");
-            return false;
-        }
-        else if (String.IsNullOrEmpty(selectedCustomer.PhoneNumber)) //Check if the phone number is empty
+        if (String.IsNullOrEmpty(selectedCustomer.PhoneNumber)) //Check if the phone number is empty
         {
             JSAlert("Please enter a phone number.");
             return false;
         }
+        else if (!selectedCustomer.PhoneNumber.All(char.IsDigit)) //Check if the phone number is numeric
+        {
+            JSAlert("Only numeric values are allowed for phone number.");
+            return false;
+        }
+
         else if (selectedCustomer.PhoneNumber.Length != 10) //Check if the phone number is 10 digits
         {
             JSAlert("Phone number must be 10 digits.");
@@ -157,17 +170,22 @@ else
 
     }
 
-    private async Task<bool> ValidateName() //Method to validate the phone number
+    /// <summary>
+    /// Validates the first and last name
+    /// </summary>
+    /// <returns>true if the name is valid, false if not</returns>
+    private async Task<bool> ValidateName() 
     {
 
-        if (selectedCustomer.FirstName.Any(char.IsDigit)) //Check if the phone number is numeric
+        if (!selectedCustomer.FirstName.All(char.IsLetter)) //Check if the first name contains only letters
         {
-            JSAlert("A name should not contain numeric values.");
+            await JSAlert("First name should only contain letters.");
             return false;
         }
-        if (selectedCustomer.LastName.Any(char.IsDigit)) //Check if the phone number is numeric
+
+        if (!selectedCustomer.LastName.All(char.IsLetter)) //Check if the last name contains only letters
         {
-            JSAlert("A last name should not contain numeric values.");
+            await JSAlert("Last name should only contain letters.");
             return false;
         }
 
@@ -175,12 +193,19 @@ else
 
     }
 
+    /// <summary>
+    /// Navigates back to the customer management page after canceling
+	/// </summary>
     private void Cancel()
     {
-        Navigation.NavigateTo("/customerManagement");
+        Navigation.NavigateTo("/customerManagement"); 
     }
 
-    private async Task JSAlert(string message) //Async method to display an alert
+    /// <summary>
+    /// Displays an alert
+    /// </summary>
+    /// <param name="message"> Message</param>
+    private async Task JSAlert(string message)
     {
         await JS.InvokeVoidAsync("alert", message);
     }
