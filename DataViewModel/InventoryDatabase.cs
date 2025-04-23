@@ -10,137 +10,55 @@ using MySqlConnector;
 
 namespace BookstorePointOfSale.DataViewModel
 {
-    internal class InventoryDatabase : Database
+    /// <summary>
+    /// Provides database operations for inventory and book records.
+    /// </summary>
+    public class InventoryDatabase : Database
     {
-        public InventoryDatabase() : base() { } 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="InventoryDatabase"/> class.
+        /// </summary>
+        public InventoryDatabase() : base() { }
 
-        public static Inventory AddBook(Inventory book) 
-        {
-            using (MySqlConnection connection = GetConnection()) 
-            {
-                connection.Open();
-                string sql = @"INSERT INTO books 
-                                (ISBN, Title, Author, Edition, Editorial, Genre, Comments, Quantity, Price) 
-                                VALUES 
-                                (@ISBN, @Title, @Author, @Edition, @Editorial, @Genre, @Comments, @Quantity, @Price)";
-
-                using (MySqlCommand command = new MySqlCommand(sql, connection)) 
-                {
-                    command.Parameters.AddWithValue("@ISBN", book.ISBN);
-                    command.Parameters.AddWithValue("@Title", book.Title);
-                    command.Parameters.AddWithValue("@Author", book.Author);
-                    command.Parameters.AddWithValue("@Edition", book.Edition);
-                    command.Parameters.AddWithValue("@Editorial", book.Editorial);
-                    command.Parameters.AddWithValue("@Genre", book.Genre);
-                    command.Parameters.AddWithValue("@Comments", book.Comments ?? string.Empty);
-                    command.Parameters.AddWithValue("@Quantity", book.Quantity);
-                    command.Parameters.AddWithValue("@Price", book.Price);
-
-                    command.ExecuteNonQuery();
-                }
-            }
-            return book;
-        }
-
-        public int UpdateBook(Inventory book) 
-        {
-            using (MySqlConnection connection = GetConnection()) 
-            {
-                connection.Open();
-                MySqlTransaction transaction = connection.BeginTransaction();
-
-                string sql = @"UPDATE books SET
-                                Title = @Title,
-                                Author = @Author, 
-                                Edition = @Edition,
-                                Genre = @Genre,
-                                Comments = @Comments,
-                                Quantity = @Quantity,
-                                Price = @Price
-                                WHERE ISBN = @ISBN";
-
-                using (MySqlCommand command = new MySqlCommand(sql, connection, transaction)) 
-                {
-                    command.Parameters.AddWithValue("@ISBN", book.ISBN);
-                    command.Parameters.AddWithValue("@Title", book.Title);
-                    command.Parameters.AddWithValue("@Author", book.Author);
-                    command.Parameters.AddWithValue("@Edition", book.Edition);
-                    command.Parameters.AddWithValue("@Editorial", book.Editorial);
-                    command.Parameters.AddWithValue("@Genre", book.Genre);
-                    command.Parameters.AddWithValue("@Comments", book.Comments ?? string.Empty);
-                    command.Parameters.AddWithValue("@Quantity", book.Quantity);
-                    command.Parameters.AddWithValue("@Price", book.Price);
-
-                    int rowsAffected = command.ExecuteNonQuery();
-
-                    if (rowsAffected == 1) 
-                    {
-                        transaction.Commit();
-                    }
-                    else 
-                    {
-                        transaction.Rollback();
-                    }
-                    return rowsAffected;
-                }
-            }
-        }
-
-        public bool DeleteBook(string isbn) 
-        {
-            using (MySqlConnection connection = GetConnection()) 
-            {
-                connection.Open();
-                MySqlTransaction transaction = connection.BeginTransaction();
-
-                string sql = "DELETE FROM books WHERE ISBN = @ISBN";
-
-                using (MySqlCommand command = new MySqlCommand(sql, connection, transaction)) 
-                {
-                    command.Parameters.AddWithValue("@ISBN", isbn);
-                    int rowsAffected = command.ExecuteNonQuery();
-
-                    if (rowsAffected == 1) 
-                    {
-                        transaction.Commit();
-                        return true;
-                    }
-                    else 
-                    {
-                        transaction.Rollback();
-                        return false;
-                    }
-                }
-            }
-        }
-
-        public static Inventory? SearchByISBN(string isbn) 
+        /// <summary>
+        /// Searches for a book and its inventory information by ISBN.
+        /// </summary>
+        /// <param name="isbn">The ISBN of the book to search for.</param>
+        /// <returns>An <see cref="Inventory"/> object if found; otherwise, <c>null</c>.</returns>
+        public static Inventory? SearchByISBN(string isbn)
         {
             Inventory? book = null;
 
-            using (MySqlConnection connection = GetConnection()) 
+            using (MySqlConnection connection = GetConnection())
             {
                 connection.Open();
 
-                string sql = "SELECT * FROM books WHERE ISBN = @ISBN";
+                string sql = @"
+                SELECT
+                    b.isbn, b.book_title, b.author, b.edition, b.editorial,
+                    b.year, b.genre, b.comments, b.unit_price, i.book_stock
+                FROM book b
+                JOIN inventory i ON b.isbn = i.isbn
+                WHERE b.isbn = @isbn";
 
-                using (MySqlCommand command = new MySqlCommand(sql, connection)) 
+                using (MySqlCommand command = new MySqlCommand(sql, connection))
                 {
-                    command.Parameters.AddWithValue("@ISBN", isbn);
+                    command.Parameters.AddWithValue("@isbn", isbn);
                     MySqlDataReader reader = command.ExecuteReader();
 
-                    if (reader.Read()) 
+                    if (reader.Read())
                     {
                         book = new Inventory(
-                            reader.GetString("ISBN"),
-                            reader.GetString("Title"),
-                            reader.GetString("Author"),
-                            reader.GetInt32("Edition"),
-                            reader.GetString("Editorial"),
-                            reader.GetString("Genre"),
-                            reader.IsDBNull("Comments") ? null : reader.GetString("Comments"),
-                            reader.GetInt32("Quantity"),
-                            reader.GetDouble("Price")
+                            reader.GetString("isbn"),
+                            reader.GetString("book_title"),
+                            reader.GetString("author"),
+                            reader.GetInt32("edition"),
+                            reader.GetString("editorial"),
+                            reader.GetString("year"),
+                            reader.GetString("genre"),
+                            reader.IsDBNull("comments") ? null : reader.GetString("Comments"),
+                            reader.GetInt32("book_stock"),
+                            reader.GetDouble("unit_price")
                         );
                     }
                     reader.Close();
@@ -149,38 +67,200 @@ namespace BookstorePointOfSale.DataViewModel
             return book;
         }
 
-        public static List<Inventory> GetAllBooks() 
+        /// <summary>
+        /// Adds a new book and its stock level to the database.
+        /// </summary>
+        /// <param name="book">The <see cref="Inventory"/> object to add.</param>
+        /// <returns>The inserted <see cref="Inventory"/> object.</returns>
+        public static Inventory AddBook(Inventory book)
         {
-            List<Inventory> books = new List<Inventory>();
-
-            using (MySqlConnection connection = GetConnection()) 
+            using (MySqlConnection connection = GetConnection())
             {
                 connection.Open();
-                string sql = "SELECT * FROM books";
+                MySqlTransaction transaction = connection.BeginTransaction();
 
-                using (MySqlCommand command = new MySqlCommand(sql, connection)) 
+                try
                 {
-                    MySqlDataReader reader = command.ExecuteReader();
+                    string sql1 = @"
+                    INSERT INTO book 
+                    (isbn, book_title, author, edition, editorial, year, genre, comments, unit_price)
+                    VALUES 
+                    (@isbn, @title, @author, @edition, @editorial, @year, 
+                    @genre, @comments, @unit_price)";
 
-                    while (reader.Read()) 
+                    using (MySqlCommand command = new MySqlCommand(sql1, connection, transaction))
                     {
-                        Inventory book = new Inventory(
-                            reader.GetString("ISBN"),
-                            reader.GetString("Title"),
-                            reader.GetString("Author"),
-                            reader.GetInt32("Edition"),
-                            reader.GetString("Editorial"),
-                            reader.GetString("Genre"),
-                            reader.IsDBNull("Comments") ? null : reader.GetString("Comments"),
-                            reader.GetInt32("Quantity"),
-                            reader.GetDouble("Price")
-                        ); 
-                        books.Add(book);
+                        command.Parameters.AddWithValue("@isbn", book.ISBN);
+                        command.Parameters.AddWithValue("@title", book.Title);
+                        command.Parameters.AddWithValue("@author", book.Author);
+                        command.Parameters.AddWithValue("@edition", book.Edition);
+                        command.Parameters.AddWithValue("@editorial", book.Editorial);
+                        command.Parameters.AddWithValue("@year", book.Year);
+                        command.Parameters.AddWithValue("@genre", book.Genre);
+                        command.Parameters.AddWithValue("@comments", book.Comments ?? "");
+                        command.Parameters.AddWithValue("@unit_price", book.Price);
+                        command.ExecuteNonQuery();
                     }
-                    reader.Close();
+
+                    string sql2 = "INSERT INTO inventory (isbn, book_stock) VALUES (@isbn, @stock)";
+                    using (MySqlCommand command = new MySqlCommand(sql2, connection, transaction))
+                    {
+                        command.Parameters.AddWithValue("@isbn", book.ISBN);
+                        command.Parameters.AddWithValue("@stock", book.Quantity);
+                        command.ExecuteNonQuery();
+                    }
+
+                    transaction.Commit();
                 }
-                return books;
+                catch
+                {
+                    transaction.Rollback();
+                    throw;
+                }
+            }
+            return book;
+        }
+
+        /// <summary>
+        /// Updates an existing book and its inventory data in the database.
+        /// </summary>
+        /// <param name="book">The <see cref="Inventory"/> object containing updated data.</param>
+        /// <returns><c>1</c> if successful; <c>0</c> otherwise.</returns>
+        public static int UpdateBook(Inventory book)
+        {
+            using (MySqlConnection connection = GetConnection())
+            {
+                connection.Open();
+                MySqlTransaction transaction = connection.BeginTransaction();
+
+                try
+                {
+                    string sql1 = @"
+                    UPDATE book SET
+                    book_title = @title,
+                    author = @author,
+                    edition = @edition,
+                    editorial = @editorial,
+                    year = @year,
+                    genre = @genre,
+                    comments = @comments,
+                    unit_price = @price
+                    WHERE isbn = @isbn";
+
+                    using (MySqlCommand command = new MySqlCommand(sql1, connection, transaction))
+                    {
+                        command.Parameters.AddWithValue("@isbn", book.ISBN);
+                        command.Parameters.AddWithValue("@title", book.Title);
+                        command.Parameters.AddWithValue("@author", book.Author);
+                        command.Parameters.AddWithValue("@edition", book.Edition);
+                        command.Parameters.AddWithValue("@editorial", book.Editorial);
+                        command.Parameters.AddWithValue("@year", book.Year);
+                        command.Parameters.AddWithValue("@genre", book.Genre);
+                        command.Parameters.AddWithValue("@comments", book.Comments ?? "");
+                        command.Parameters.AddWithValue("@price", book.Price);
+                        command.ExecuteNonQuery();
+                    }
+
+                    string sql2 = "UPDATE inventory SET book_stock = @stock WHERE isbn = @isbn";
+                    using (MySqlCommand command = new MySqlCommand(sql2, connection, transaction))
+                    {
+                        command.Parameters.AddWithValue("@isbn", book.ISBN);
+                        command.Parameters.AddWithValue("@stock", book.Quantity);
+                        command.ExecuteNonQuery();
+                    }
+
+                    transaction.Commit();
+                    return 1;
+                }
+                catch
+                {
+                    transaction.Rollback();
+                    return 0;
+                }
             }
         }
+
+        /// <summary>
+        /// Deletes a book and its inventory record from the database using the given ISBN.
+        /// </summary>
+        /// <param name="isbn">The ISBN of the book to delete.</param>
+        /// <returns><c>true</c> if deletion was successful; otherwise, <c>false</c>.</returns>
+        public static bool DeleteBook(string isbn)
+        {
+            using (MySqlConnection connection = GetConnection())
+            {
+                connection.Open();
+                MySqlTransaction transaction = connection.BeginTransaction();
+
+                try
+                {
+                    string deleteInventory = "DELETE FROM inventory WHERE isbn = @isbn";
+                    using (MySqlCommand command = new MySqlCommand(deleteInventory, connection, transaction))
+                    {
+                        command.Parameters.AddWithValue("@isbn", isbn);
+                        command.ExecuteNonQuery();
+                    }
+
+                    string deleteBook = "DELETE FROM book WHERE isbn = @isbn";
+                    using (MySqlCommand command = new MySqlCommand(deleteBook, connection, transaction))
+                    {
+                        command.Parameters.AddWithValue("@isbn", isbn);
+                        command.ExecuteNonQuery();
+                    }
+
+                    transaction.Commit();
+                    return true;
+                }
+                catch
+                {
+                    transaction.Rollback();
+                    return false;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Retrieves all books with their inventory details from the database.
+        /// </summary>
+        /// <returns>A list of <see cref="Inventory"/> records.</returns>
+        public static List<Inventory> GetAllBooks()
+        {
+            List<Inventory> inventoryList = new List<Inventory>();
+
+            using (MySqlConnection connection = GetConnection())
+            {
+                connection.Open();
+                string sql = @"
+                SELECT 
+                    b.isbn, b.book_title, b.author, b.edition, b.editorial,
+                    b.year, b.genre, b.comments, b.unit_price, i.book_stock
+                FROM book b
+                JOIN inventory i ON b.isbn = i.isbn";
+
+                using (MySqlCommand command = new MySqlCommand(sql, connection))
+                using (MySqlDataReader reader = command.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        Inventory item = new Inventory(
+                            reader.GetString("isbn"),
+                            reader.GetString("book_title"),
+                            reader.GetString("author"),
+                            reader.GetInt32("edition"),
+                            reader.GetString("editorial"),
+                            reader.GetString("year"),
+                            reader.GetString("genre"),
+                            reader.IsDBNull(reader.GetOrdinal("comments")) ? null : reader.GetString("comments"),
+                            reader.GetInt32("book_stock"),
+                            (double)reader.GetDecimal("unit_price")
+                        );
+
+                        inventoryList.Add(item);
+                    }
+                }
+            }
+            return inventoryList;
+        }
     }
+
 }
