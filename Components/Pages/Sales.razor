@@ -4,6 +4,7 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 
+<!--BreadCrumb Navigation-->
 <nav aria-label="breadcrumb" class="bg-secondary bg-opacity-10 rounded-3">
     <ol class="breadcrumb align-content-center ps-3 pt-1 pb-1">
         <li class="breadcrumb-item"><a href="/">Home</a></li>
@@ -25,64 +26,72 @@
     <input type="number" @bind="customerId" class="form-control" />
 </div>
 
+<!--Sale Session Buttin-->
+<button class="btn btn-primary" @onclick="CreateSaleSession">Click here to start a sale session</button>
+@if (!string.IsNullOrEmpty(statusMessage))
+{
+    <p class="alert alert-info">@statusMessage</p>
+}
 <!--ISBN Input-->
 <div class="form-group">
     <label>ISBN:</label>
     <input type="text" @bind="isbn" class="form-control" />
 </div>
 
-<!-- Add to Cart Button -->
-<button class="btn btn-success" @onclick="AddBookToCart">Add Book to Cart</button>
+<!-- Quantity Input -->
+<div class="form-group">
+    <label>Quantity:</label>
+    <input type="number" @bind="quantity" class="form-control" />
+</div>
 
-<!--Display Cart-->
-<table class="table">
-    <thead>
-        <tr>
-            <th>Customer ID</th>
-            <th>Sale ID</th>
-            <th>ISBN</th>
-            <th>Price</th>
-            <th>Quantity</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-</table>
-@*     <tbody> *@
-@*         @foreach (var entry in cart) *@
-@*         { *@
-@*             <tr> *@
-@*                 <td>@customerId</td> <!-- Show Customer ID --> *@
-@*                 <td>@nextSaleId</td> <!-- Show Sale ID --> *@
-@*                 <td>@entry.ISBN</td> *@
-@*                 <td>@entry.ItemPrice</td> *@
-@*                 <td>@entry.QuantitySold</td> *@
-@*                 <td> *@
-@*                     <button class="btn btn-danger" @onclick="() => RemoveBookFromCart(entry)">Remove from Cart</button> *@
-@*                 </td> *@
-@*             </tr> *@
-@*         } *@
-@*     </tbody> *@
-@* </table> *@
+<!-- Add Book to Sale Button -->
+<button class="btn btn-success" @onclick="AddBookToSale">Add Book to Sale</button>
 
-@* <!--Add More Books or Confirm Sale--> *@
-@* <div class="mt-3"> *@
-@*     <p>Would you like to add more books to your cart?</p> *@
+<!-- Display Sale Items -->
+@if (saleItems != null && saleItems.Count > 0)
+{
+    <h3>Sale Items</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ISBN</th>
+                <th>Title</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in saleItems)
+            {
+                <tr>
+                    <td>@item.ISBN</td>
+                    <td>@item.Title</td>
+                    <td>@item.QuantitySold</td>
+                    <td>@item.ItemPrice</td>
+                    <td>@(item.QuantitySold * item.ItemPrice)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
 
-@*     <button class="btn btn-secondary" @onclick="AddBookToCart">Yes, add more books</button> *@
-@*     <button class="btn btn-primary" @onclick="ConfirmSale">No, confirm sale</button> *@
-@* </div> *@
+<!-- Confirm Sale Button -->
+@if (saleItems != null && saleItems.Count > 0)
+{
+    <button class="btn btn-warning" @onclick="ConfirmSale">Confirm Sale</button>
+}
 
-@* @if (!string.IsNullOrEmpty(statusMessage)) *@
-@* { *@
-@*     <p class="alert alert-info">@statusMessage</p> *@
-@* } *@
+
 
 @code {
     private int customerId;
     private string isbn;
+    private int quantity;
     private string statusMessage;
-    private int nextSaleId;
-    private List<SaleItem> cart = new(); //List to hold cart items
+    private int saleId; // Current Sale ID
+	private string receipt; // Receipt details
+    private List<SaleItem> saleItems = new(); // Holds Sale Items
 
     //Alert Method
     private async Task JSAlert(string message)
@@ -90,56 +99,74 @@
         await JS.InvokeVoidAsync("alert", message);
     }
 
-    //Method to Create a New Sale Session
-    private async Task CreateSaleSession()
+    //Start the sale session
+    private async Task StartSaleSession()
     {
         if (customerId <= 0)
         {
             await JSAlert("Please enter a valid Customer ID.");
             return;
         }
-        //Call CreateSaleSession to update status message
-        statusMessage = SalesDatabase.CreateSaleSession(customerId);
-        nextSaleId = SalesDatabase.GetNextSaleId();
-        statusMessage = $"Sale ID {nextSaleId} has been created successfully.";
+
+        saleId = SalesDatabase.CreateSaleSession(customerId); // Create a new sale session
+        statusMessage = $"Sale session started! Sale ID: {saleId}";
+        await JSAlert(statusMessage);
     }
 
-    //Method to Add Book to Cart
-    private async Task AddBookToCart()
-    {
-        if (string.IsNullOrEmpty(isbn))
-        {
-            await JSAlert("Please enter a valid ISBN.");
-            return;
-        }
-        if (nextSaleId <= 0)
-        {
-            await JSAlert("Please create a sale session first before adding books.");
-            return;
-        }
-        var saleItem = SalesDatabase.GetSaleItemByISBN(isbn);
-		if (saleItem == null)
-		{
-			await JSAlert("Book not found in the database.");
-			return;
-		}
+    //Add book to sale
+    // private async Task AddBookToSale()
+    // {
+    //     if (saleId <= 0)
+    //     {
+    //         await JSAlert("Please start a sale session first.");
+    //         return;
+    //     }
 
-        if (saleItem != null)
+    //     if (string.IsNullOrEmpty(isbn) || quantity <= 0)
+    //     {
+    //         await JSAlert("Please enter a valid ISBN and quantity.");
+    //         return;
+    //     }
+
+    //     string result = SalesDatabase.AddBookToCart(saleId, isbn, quantity, GetItemPrice(isbn)); Replace GetItemPrice with your method to fetch price
+    //     if (!result.StartsWith("Error"))
+    //     {
+    //         saleItems = SalesDatabase.GetSaleItemsBySaleId(saleId); Refresh sale items
+    //         statusMessage = "Book added to sale successfully!";
+    //     }
+    //     else
+    //     {
+    //         statusMessage = result;
+    //     }
+    //     await JSAlert(statusMessage);
+    // }
+    //Confirm Sale
+    private async Task ConfirmSale()
+    {
+        if (saleId <= 0)
         {
-            //Check if the book is already in the cart
-            var existingItem = cart.FirstOrDefault(item => item.ISBN == isbn);
-            if (existingItem != null)
-            {
-                existingItem.QuantitySold += saleItem.QuantitySold;
-                statusMessage = $"Updated quantity for {saleItem.ISBN} in the cart."; 
-            }
-            else
-            {
-                cart.Add(new SaleItem(saleItem.SaleItemId, saleItem.ISBN, saleItem.QuantitySold, saleItem.ItemPrice));
-                statusMessage = $"Added {saleItem.ISBN} to the cart.";
-            };
+            await JSAlert("No active sale session to confirm.");
+            return;
         }
-}
+
+        string result = SalesDatabase.ConfirmSale(saleId);
+        if (!result.StartsWith("Error"))
+        {
+            statusMessage = "Sale confirmed successfully!";
+            saleItems.Clear(); // Clear sale items
+            saleId = 0; // Reset sale session
+
+            // Generate the receipt
+            receipt = SalesDatabase.GenerateReceipt(saleId); // Fetch receipt de
+
+        }
+        else
+        {
+            statusMessage = result;
+        }
+        await JSAlert(statusMessage);
+    }
+
 }
     
 

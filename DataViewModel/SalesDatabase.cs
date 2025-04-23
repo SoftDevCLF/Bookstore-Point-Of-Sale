@@ -22,33 +22,27 @@ namespace BookstorePointOfSale.DataViewModel
 
 
         //Method to create a sale session
-        public static string CreateSaleSession(int customerId)
+        public static int CreateSaleSession(int customerId)
         {
             try
             {
-                //Generate new sale ID
-                int saleId = GetNextSaleId(); //Method fetches the next sale ID
-                if (saleId < 0)
-                {
-                    return "Error: Unable to fetch the next sale ID.";
-                }
-                string query = "INSERT INTO sales (sale_id, customer_id, sale_date) VALUES (@saleId, @customerId, @saleDate);";
+                string query = "INSERT INTO sales (customer_id, sale_date, total_sale) VALUES (@customerId, NOW(), 0.00); SELECT LAST_INSERT_ID();";
                 using (var connection = GetConnection())
                 {
                     connection.Open();
                     using (var command = new MySqlCommand(query, connection))
                     {
-                        command.Parameters.AddWithValue("@saleId", saleId);
                         command.Parameters.AddWithValue("@customerId", customerId);
-                        command.Parameters.AddWithValue("@saleDate", DateTime.Now);
-                        command.ExecuteNonQuery();
+
+                        // ExecuteScalar retrieves the LAST_INSERT_ID
+                        return Convert.ToInt32(command.ExecuteScalar());
                     }
                 }
-                return "Sale session created successfully.";
             }
             catch (Exception ex)
             {
-                return $"Error in CreateSaleSession: {ex.Message}";
+                Console.WriteLine($"Error in CreateSaleSession: {ex.Message}");
+                return -1; // Return -1 to indicate failure
             }
         }
 
@@ -129,55 +123,180 @@ namespace BookstorePointOfSale.DataViewModel
             }
         }
 
-        //Method to add books to the cart
-        public static string AddBookToCart(int saleId, string isbn, int quantitySold, decimal itemPrice)
+        //Method to Calculate Total Quantity For Sale
+        public static int CalculateTotalQuantityForSale(int saleId)
         {
             try
             {
-                if (saleId <= 0) //Validate saleId
-                {
-                    return "Error: Invalid sale ID.";
-                }
-
-                string query = "INSERT INTO sale_item (sale_id, isbn, quantity_sold, item_price) VALUES (@saleId, @isbn, @quantitySold, @itemPrice);";
                 using (var connection = GetConnection())
                 {
                     connection.Open();
+                    // Query to calculate the total quantity of items sold in a sale
+                    string query = "SELECT SUM(quantity_sold) FROM sale_item WHERE sale_id = @saleId";
                     using (var command = new MySqlCommand(query, connection))
                     {
                         command.Parameters.AddWithValue("@saleId", saleId);
-                        command.Parameters.AddWithValue("@isbn", isbn.Trim()); // Clean up any whitespace from ISBN
-                        command.Parameters.AddWithValue("@quantitySold", quantitySold);
-                        command.Parameters.AddWithValue("@itemPrice", itemPrice);
-
-                        int rowsAffected = command.ExecuteNonQuery();
-                        if (rowsAffected > 0)
+                        object result = command.ExecuteScalar();
+                        if (result != DBNull.Value)
                         {
-                            // Clear success message
-                            return "The book was added to the cart successfully.";
-                        }
-                        else
-                        {
-                            // Clear failure message
-                            return "The book could not be added to the cart. Please try again.";
-
+                            return Convert.ToInt32(result);
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in AddBookToCart: {ex.Message}");
-                return $"Error in AddBookToCart: {ex.Message}";
+                Console.WriteLine($"Error in CalculateTotalQuantityForSale: {ex.Message}");
+            }
+            return 0; // Return 0 if an error occurs or no records are found
+        }
+
+        //Method to Calculate Total Sale Amount
+        public static int CalculateTotalAmountForSale(int saleId)
+        {
+            try
+            {
+                using (var connection = GetConnection())
+                {
+                    connection.Open();
+                    // Query to calculate the total sale amount for a sale
+                    string query = "SELECT SUM(quantity_sold * item_price) FROM sale_item WHERE sale_id = @saleId";
+                    using (var command = new MySqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@saleId", saleId);
+                        object result = command.ExecuteScalar();
+                        if (result != DBNull.Value)
+                        {
+                            return Convert.ToInt32(result);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in CalculateTotalSaleAmountForSale: {ex.Message}");
+            }
+            return 0; // Return 0 if an error occurs or no records are found
+        }
+
+
+        //Method to confirm sale
+        public static string ConfirmSale(int saleId)
+        {
+            try
+            {
+                //Calculate totals
+                int totalQuantity = CalculateTotalQuantityForSale(saleId);
+                decimal totalCost = CalculateTotalAmountForSale(saleId);
+
+                //Update the sales table with the total cost
+                string updateSaleQuery = "UPDATE sales SET total_sale = @totalCost WHERE sale_id = @saleId;";
+                using (var connection = GetConnection())
+                {
+                    connection.Open();
+                    using (var command = new MySqlCommand(updateSaleQuery, connection))
+                    {
+                        command.Parameters.AddWithValue("@totalCost", totalCost);
+                        command.Parameters.AddWithValue("@saleId", saleId);
+                        command.ExecuteNonQuery();
+                    }
+                }
+
+                //Update inventory
+                UpdateInventory(saleId);
+
+                //Generate receipt
+                string receipt = GenerateReceipt(saleId);
+
+                // Return confirmation message and receipt
+                return $"Sale confirmed successfully!\n\n{receipt}";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in ConfirmSale: {ex.Message}");
+                return $"Error confirming sale: {ex.Message}";
+            }
+        }
+
+        //Method to generate receipt
+        public static string GenerateReceipt(int saleId)
+        {
+            try
+            {
+                StringBuilder receipt = new StringBuilder();
+                receipt.AppendLine($"Receipt for Sale ID: {saleId}");
+                receipt.AppendLine("--------------------------------------------------");
+                // Fetch sale items
+                string query = "SELECT isbn, quantity_sold, item_price FROM sale_item WHERE sale_id = @saleId;";
+                using (var connection = GetConnection())
+                {
+                    connection.Open();
+                    using (var command = new MySqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@saleId", saleId);
+                        using (var reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                string isbn = reader.GetString("isbn");
+                                int quantitySold = reader.GetInt32("quantity_sold");
+                                decimal itemPrice = reader.GetDecimal("item_price");
+                                receipt.AppendLine($"ISBN: {isbn}, Quantity Sold: {quantitySold}, Item Price: {itemPrice:C}");
+                            }
+                        }
+                    }
+                }
+                // Fetch total cost
+                decimal totalCost = CalculateTotalAmountForSale(saleId);
+                receipt.AppendLine($"--------------------------------------------------");
+                receipt.AppendLine($"Total Cost: {totalCost:C}");
+                return receipt.ToString();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GenerateReceipt: {ex.Message}");
+                return $"Error generating receipt: {ex.Message}";
             }
         }
 
 
+        // Method to process sale items  stock
+        public static void UpdateInventory(int saleId)
+        {
+            try
+            {
+                // Retrieve sale items for the given sale ID
+                string query = "SELECT isbn, quantity_sold FROM sale_item WHERE sale_id = @saleId;";
+                using (var connection = GetConnection())
+                {
+                    connection.Open();
+                    using (var command = new MySqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@saleId", saleId);
+                        using (var reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                string isbn = reader.GetString("isbn");
+                                int quantitySold = reader.GetInt32("quantity_sold");
 
-
-
-
-
-
+                                // Log or process the sale item without updating inventory
+                                Console.WriteLine($"Processing Sale Item - ISBN: {isbn}, Quantity Sold: {quantitySold}");
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in ProcessSaleItems: {ex.Message}");
+            }
+        }
     }
 }
+
+
+
+
+
+
