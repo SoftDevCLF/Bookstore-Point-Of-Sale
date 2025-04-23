@@ -1,0 +1,157 @@
+﻿@page "/addNewBook"
+@using BookstorePointOfSale.DataModel
+@using BookstorePointOfSale.DataViewModel
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<nav aria-label="breadcrumb" class="bg-secondary bg-opacity-10 rounded-3">
+	<ol class="breadcrumb align-content-center ps-3 pt-1 pb-1">
+		<li class="breadcrumb-item"><a href="/">Home</a></li>
+		<li class="breadcrumb-item"><a href="/inventoryManagement">Inventory Management</a></li>
+		<li class="breadcrumb-item active" aria-current="page">Add New Book</li>
+	</ol>
+</nav>
+
+<hr/>
+
+<h1>Add New Book to Inventory</h1>
+
+<hr/>
+
+<div class="container">
+	<div class="row">
+		<div class="col-6">
+			<div class="fw-lighter mb-2">
+				<i class="text-danger">*</i> <i>Required</i>
+			</div>
+
+			<form @onsubmit="@(async e => await AddInventoryToDatabase())">
+				<div class="mb-3">
+					<label class="form-label">ISBN<i class="text-danger">*</i></label>
+					<input @bind="isbn" class="form-control"/>
+				</div>
+
+				<div class="mb-3">
+					<label class="form-label">Title<i class="text-danger">*</i></label>
+					<input @bind="title" class="form-control"/>
+				</div>
+
+				<div class="mb-3">
+					<label class="form-label">Author<i class="text-danger">*</i></label>
+					<input @bind="author" class="form-control"/>
+				</div>
+
+				<div class="mb-3">
+					<label class="form-label">Edition<i class="text-danger">*</i></label>
+					<input type="number" @bind="edition" class="form-control"/>
+				</div>
+
+				<div class="mb-3">
+					<label class="form-label">Editorial<i class="text-danger">*</i></label>
+					<input @bind="editorial" class="form-control"/>
+				</div>
+
+				<div class="mb-3">
+					<label class="form-label">Year<i class="text-danger">*</i></label>
+					<input @bind="year" class="form-control"/>
+				</div>
+
+				<div class="mb-3">
+					<label class="form-label">Genre<i class="text-danger">*</i></label>
+					<input @bind="genre" class="form-control"/>
+				</div>
+
+				<div class="mb-3">
+					<label class="form-label">Comments</label>
+					<textarea class="form-control" @bind="comments"></textarea>
+				</div>
+
+				<div class="mb-3">
+					<label class="form-label">Price<i class="text-danger">*</i></label>
+					<input type="number" step="0.01" @bind="price" class="form-control" />
+				</div>
+
+				<div class="mb-3">
+					<label class="form-label">Quantity<i class="text-danger">*</i></label>
+					<input type="number" @bind="quantity" class="form-control" />
+				</div>
+
+				<div>
+					<button class="btn btn-primary mb-3 me-3" type="submit">Add Book</button>
+				</div>
+			</form>
+		</div>
+
+		<div class="col-6 img-thumbnail">
+			@if (newInventoryAdded)
+			{
+				<h4>New Book Overview</h4>
+				<div class="bg-secondary bg-gradient bg-opacity-10 rounded-3 p-3">
+					<div><img src="bookshop.jpg" alt="Books" class="img-fluid rounded-3"/></div>
+					<div class="fw-bold p-3">@title</div>
+
+					<div class="p-3"><div class="text-muted">Author</div>@author</div>
+					<div class="p-3"><div class="text-muted">Edition</div>@edition</div>
+					<div class="p-3"><div class="text-muted">Editorial</div>@editorial</div>
+					<div class="p-3"><div class="text-muted">Year</div>@year</div>
+					<div class="p-3"><div class="text-muted">Genre</div>@genre</div>
+					<div class="p-3"><div class="text-muted">Genre</div>@comments</div>
+					<div class="p-3"><div class="text-muted">Price</div>@price.ToString("C")</div>
+					<div class="p-3"><div class="text-muted">Quantity</div>@quantity</div>
+				</div>
+			}
+		</div>
+	</div>
+</div>
+
+@code {
+	private string isbn;
+	private string title;
+	private string author;
+	private int edition;
+	private string editorial;
+	private string year;
+	private string genre;
+	private string comments;
+	private double price;
+	private int quantity;
+	private bool newInventoryAdded = false;
+
+	public async Task AddInventoryToDatabase()
+	{
+		if (!await ValidateInputs())
+			return;
+
+		Inventory newBook = new Inventory(isbn, title, author, edition, editorial, year, genre, comments, quantity, price);
+		await Task.Run(() => InventoryDatabase.AddBook(newBook));
+		newInventoryAdded = true;
+	}
+
+	private async Task<bool> ValidateInputs()
+	{
+		if (string.IsNullOrWhiteSpace(isbn))
+		{
+			await JSAlert("ISBN is required.");
+			return false;
+		}	
+
+		if (quantity < 0) 
+		{
+			await JSAlert("Quantity cannot be negative.");
+			return false;
+		}
+
+		if (price < 0) 
+		{
+			await JSAlert("Price cannot be negative.");
+			return false;
+		}
+
+		return true;
+	}
+
+	private async Task JSAlert(string message)
+	{
+		await JS.InvokeVoidAsync("alert", message);	
+	}
+}
