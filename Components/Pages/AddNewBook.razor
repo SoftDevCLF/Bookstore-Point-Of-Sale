@@ -1,6 +1,7 @@
 ﻿@page "/addNewBook"
 @using BookstorePointOfSale.DataModel
 @using BookstorePointOfSale.DataViewModel
+@using BookstorePointOfSale.Exceptions
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 
@@ -123,9 +124,18 @@
 			return;
 
 		Inventory newBook = new Inventory(isbn, title, author, edition, editorial, year, genre, comments, quantity, price);
-		await Task.Run(() => InventoryDatabase.AddBook(newBook));
-		newInventoryAdded = true;
+
+		try
+		{
+			await Task.Run(() => InventoryDatabase.AddBook(newBook));
+			newInventoryAdded = true;
+		}
+		catch (DuplicateISBNException ex)
+		{
+			await JS.InvokeVoidAsync("alert", ex.Message);
+		}
 	}
+
 
 	private async Task<bool> ValidateInputs()
 	{

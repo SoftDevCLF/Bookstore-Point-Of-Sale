@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using BookstorePointOfSale.DataModel;
-
+using BookstorePointOfSale.Exceptions;
 using MySqlConnector;
 
 namespace BookstorePointOfSale.DataViewModel
@@ -81,12 +81,24 @@ namespace BookstorePointOfSale.DataViewModel
 
                 try
                 {
+                    string checkSql = "SELECT COUNT(*) FROM book WHERE isbn = @isbn";
+                    using (MySqlCommand checkCommand = new MySqlCommand(checkSql, connection, transaction)) 
+                    {
+                        checkCommand.Parameters.AddWithValue("@isbn", book.ISBN);
+                        int count = Convert.ToInt32(checkCommand.ExecuteScalar());
+
+                        if (count > 0) 
+                        {
+                            throw new DuplicateISBNException($"Error Invalid ISBN! A book with ISBN {book.ISBN} already exists.");
+                        }
+                    }
+
                     string sql1 = @"
-                    INSERT INTO book 
-                    (isbn, book_title, author, edition, editorial, year, genre, comments, unit_price)
-                    VALUES 
-                    (@isbn, @title, @author, @edition, @editorial, @year, 
-                    @genre, @comments, @unit_price)";
+                        INSERT INTO book 
+                            (isbn, book_title, author, edition, editorial, year, genre, comments, unit_price)
+                        VALUES 
+                            (@isbn, @title, @author, @edition, @editorial, @year, 
+                            @genre, @comments, @unit_price)";
 
                     using (MySqlCommand command = new MySqlCommand(sql1, connection, transaction))
                     {
