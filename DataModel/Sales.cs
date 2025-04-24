@@ -3,28 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using BookstorePointOfSale.DataModel;
 
-namespace Library_Manager.Data
+namespace BookstorePointOfSale.DataModel
 {
-    /// <summary>
-    /// Represents a Sales record
-    /// </summary>
     public class Sales
     {
-        /// <summary>
-        /// Property for sale ID
-        /// </summary>
         public int SaleId { get; set; }
-
-        /// <summary>
-        /// Property for customer ID associated with the sale
-        /// </summary>
         public int CustomerId { get; set; }
-
-        /// <summary>
-        /// Property for the date of the sale
-        /// </summary>
         public DateTime SaleDate { get; set; }
 
         /// <summary>

@@ -1,0 +1,212 @@
+﻿@page "/updateCustomer/{customerId:int}"
+@using BookstorePointOfSale.DataViewModel
+@using BookstorePointOfSale.DataModel
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+
+<nav class="bg-secondary bg-opacity-10 rounded-3 p-2 mb-3">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="/">Home</a></li>
+        <li class="breadcrumb-item"><a href="/customerManagement">Customer Management</a></li>
+        <li class="breadcrumb-item active">Update Customer</li>
+    </ol>
+</nav>
+
+<hr />
+<h1>Update Customer</h1>
+<hr />
+
+
+@if (!isLoaded)
+{
+    <p>Customer not found</p>
+}
+else
+{
+    <div class="container">
+        <div class="row">
+            <!-- Form Section -->
+            <div class="col-6">
+                <h4>Update Customer ID: @selectedCustomer.CustomerId</h4>
+                <div class="fw-lighter mb-2">
+                    <i class="text-danger">*</i> <i>Required</i>
+                </div>
+                <!--On submit, save changes-->
+                <form @onsubmit="SaveChanges">
+                    <div class="mb-3">
+                        <label class="form-label">First Name</label>
+                        <input class="form-control" @bind="selectedCustomer.FirstName" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Last Name</label>
+                        <input class="form-control" @bind="selectedCustomer.LastName" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" @bind="selectedCustomer.Email" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone Number <i class="text-danger">*</i></label>
+                        <input type="tel" class="form-control" @bind="selectedCustomer.PhoneNumber" />
+                    </div>
+                    <button type="submit" class="btn btn-warning me-2">Save Changes</button>
+                    <button type="button" class="btn btn-danger" @onclick="Cancel">Cancel</button>
+                </form>
+            </div>
+
+            <!-- Customer Info Section -->
+
+            @if (isUpdated)
+            {
+                <div class="col-6 img-thumbnail mb-3">
+                    <h4>Updated Customer Overview</h4>
+                    <div class="bg-secondary bg-gradient bg-opacity-10 rounded-3 p-3">
+                        <div>
+                            <img class="m1 img-fluid rounded-3" src="books.jpg" alt="Books Image" height="100" />
+                        </div>
+                        <div class="fw-bold p-3">
+                            @updatedCustomer.FirstName @updatedCustomer.LastName
+                        </div>
+                        <div class="p-3">
+                            <div class="text-muted">Email</div>
+                            @updatedCustomer.Email
+                        </div>
+                        <div class="p-3">
+                            <div class="text-muted">Phone Number</div>
+                            @updatedCustomer.PhoneNumber
+                        </div>
+                    </div>
+
+                    <div class="mt-2 mb-2">
+                        <button class="btn btn-success mt-6">Start a Sale</button>
+                        <button class="btn btn-secondary mt-6" @onclick="Cancel">Back to Customer Management</button>
+                    </div>
+                </div>
+            }
+
+        </div>
+    </div>
+}
+
+
+@code {
+    //Parameter to hold the customer ID
+    [Parameter]
+    public int customerId { get; set; }
+    //Variables
+    private Customer selectedCustomer = new();
+    private Customer updatedCustomer = new();
+    private bool isUpdated = false;
+    private bool isLoaded = false;
+
+    /// <summary>
+    /// Retrieves the customer from the database
+    /// </summary>
+    protected override async Task OnParametersSetAsync()
+    {
+        selectedCustomer = CustomerDatabase.GetCustomerById(customerId);//Get the customer from the database and assign it to the selected customer
+
+        if (selectedCustomer == null) //Check if the customer was found
+        {
+            JSAlert("Customer not found.");
+            Navigation.NavigateTo("/customerManagement");
+        }
+
+        isLoaded = true; //if the customer was found, set isLoaded to true
+    }
+
+    /// <summary>
+    /// Saves changes to the selected customer after validation and confirmation.
+    /// </summary>
+    /// <returns>A task representing the save operation.</returns>
+    private async Task SaveChanges()
+    {
+        if (!await ValidateName() || !await ValidatePhoneNumber()) //Check if the name and phone number are valid
+        {
+            return;
+        }
+
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Are you sure you want to update this customer?");  //Prompt the user to confirm the update
+
+        if (!confirmed) //If the user does not confirm the update, return
+        {
+            return;
+        }
+        else //If the user confirms the update, update the customer, set isUpdated to true, and clear the selected customer
+        {
+            CustomerDatabase.UpdateCustomer(selectedCustomer);
+            updatedCustomer = selectedCustomer;//Set the updated customer to the selected customer
+            isUpdated = true;
+            selectedCustomer = new Customer();
+        }
+    }
+
+    /// <summary>
+    /// Validates the phone number
+    /// </summary>
+    /// <returns>True if the phone number is valid, false if not</returns>
+    private async Task<bool> ValidatePhoneNumber() //Method to validate the phone number
+    {
+
+        if (String.IsNullOrEmpty(selectedCustomer.PhoneNumber)) //Check if the phone number is empty
+        {
+            JSAlert("Please enter a phone number.");
+            return false;
+        }
+        else if (!selectedCustomer.PhoneNumber.All(char.IsDigit)) //Check if the phone number is numeric
+        {
+            JSAlert("Only numeric values are allowed for phone number.");
+            return false;
+        }
+
+        else if (selectedCustomer.PhoneNumber.Length != 10) //Check if the phone number is 10 digits
+        {
+            JSAlert("Phone number must be 10 digits.");
+            return false;
+        }
+
+
+        return true;
+
+    }
+
+    /// <summary>
+    /// Validates the first and last name
+    /// </summary>
+    /// <returns>true if the name is valid, false if not</returns>
+    private async Task<bool> ValidateName() 
+    {
+
+        if (!selectedCustomer.FirstName.All(char.IsLetter)) //Check if the first name contains only letters
+        {
+            await JSAlert("First name should only contain letters.");
+            return false;
+        }
+
+        if (!selectedCustomer.LastName.All(char.IsLetter)) //Check if the last name contains only letters
+        {
+            await JSAlert("Last name should only contain letters.");
+            return false;
+        }
+
+        return true;
+
+    }
+
+    /// <summary>
+    /// Navigates back to the customer management page after canceling
+	/// </summary>
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/customerManagement"); 
+    }
+
+    /// <summary>
+    /// Displays an alert
+    /// </summary>
+    /// <param name="message"> Message</param>
+    private async Task JSAlert(string message)
+    {
+        await JS.InvokeVoidAsync("alert", message);
+    }
+}

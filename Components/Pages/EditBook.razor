@@ -1,0 +1,127 @@
+﻿@page "/editBook/{isbn}"
+@using BookstorePointOfSale.DataModel
+@using BookstorePointOfSale.DataViewModel
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<nav aria-label="breadcrumb" class="bg-secondary bg-opacity-10 rounded-3">
+	<ol class="breadcrumb align-content-center ps-3 pt-1 pb-1">
+		<li class="breadcrumb-item"><a href="/">Home</a></li>
+		<li class="breadcrumb-item"><a href="/inventoryManagement">Inventory Management</a></li>
+		<li class="breadcrumb-item active" aria-current="page">Edit Book</li>
+	</ol>
+</nav>
+
+<hr/>
+
+<h1>Edit Book Details</h1>
+
+<hr/>
+
+@if (isLoaded)
+{
+    <div class="container mt-3">
+        <div class="row">
+            <div class="col-6">
+                <form @onsubmit="UpdateInventory">
+					<div class="mb-3">
+						<label>Title</label>
+						<input class="form-control" @bind="inventory.Title" />
+					</div>
+
+					<div class="mb-3">
+						<label>Author</label>
+						<input class="form-control" @bind="inventory.Author" />
+					</div>
+
+					<div class="mb-3">
+						<label>Edition</label>
+						<input class="form-control" @bind="inventory.Edition" />
+					</div>
+
+					<div class="mb-3">
+						<label>Editorial</label>
+						<input class="form-control" @bind="inventory.Editorial" />
+					</div>
+
+					<div class="mb-3">
+						<label>Year</label>
+						<input class="form-control" @bind="inventory.Year" />
+					</div>
+
+					<div class="mb-3">
+						<label>Genre</label>
+						<input class="form-control" @bind="inventory.Genre" />
+					</div>
+
+					<div class="mb-3">
+						<label>Comments</label>
+						<textarea class="form-control" @bind="inventory.Comments"></textarea>
+					</div>
+
+					<div class="mb-3">
+						<label>Price</label>
+						<input class="form-control" type="number" step="0.01" @bind="inventory.Price" />
+					</div>
+
+					<button class="btn btn-success" type="submit">Save Changes</button>
+
+                </form>
+            </div>
+
+            <div class="col-6">
+                @if (inventory != null && updateSuccessful)
+                {
+                    <h4>Updated Book Overview</h4>
+                    <div class="bg-secondary bg-gradient bg-opacity-10 rounded-3 p-3">
+                        <div><img src="bookshop.jpg" alt="Books" class="img-fluid rounded-3" /></div>
+                        <div class="fw-bold p-3">@inventory.Title</div>
+                        <div class="p-3"><div class="text-muted">Author</div>@inventory.Author</div>
+                        <div class="p-3"><div class="text-muted">Edition</div>@inventory.Edition</div>
+                        <div class="p-3"><div class="text-muted">Editorial</div>@inventory.Editorial</div>
+                        <div class="p-3"><div class="text-muted">Year</div>@inventory.Year</div>
+                        <div class="p-3"><div class="text-muted">Genre</div>@inventory.Genre</div>
+						<div class="p-3"><div class="text-muted">Comments</div>@inventory.Comments</div>
+                        <div class="p-3"><div class="text-muted">Price</div>@inventory.Price.ToString("C")</div>
+                        <div class="p-3"><div class="text-muted">Quantity</div>@inventory.Quantity</div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="text-muted">Loading book details...</div>
+}
+
+
+
+@code {
+	[Parameter] public string isbn { get; set; }
+	private Inventory? inventory;
+
+	private bool isLoaded = false;
+	private bool updateSuccessful = false;
+
+	protected override async Task OnInitializedAsync()
+	{
+		inventory = await Task.Run(() => InventoryDatabase.SearchByISBN(isbn));
+		isLoaded = true;
+	}
+
+	private async Task UpdateInventory()
+	{
+		int rowsAffected = await Task.Run(() => InventoryDatabase.UpdateBook(inventory));
+
+		if (rowsAffected > 0)
+		{
+			updateSuccessful = true;
+		}
+		else
+		{
+			await JS.InvokeVoidAsync("alert", "Update failed.");
+		}
+	}
+
+}

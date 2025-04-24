@@ -12,7 +12,6 @@ namespace BookstorePointOfSale.DataModel
     /// </summary>
     public abstract class Book
     {
-
         public string ISBN { get; set; }  // ISBN is the unique identifier
         public string Title { get; set; }
         public string Author { get; set; }
