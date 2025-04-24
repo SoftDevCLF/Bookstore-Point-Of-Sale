@@ -46,7 +46,7 @@ namespace BookstorePointOfSale.DataViewModel
             }
         }
 
-        //Method to add sale item
+        //Method to add sale item //isbn, quantity, total, 
         public static bool AddSaleItem(int saleId, string isbn, string bookTitle, int quantitySold, decimal itemPrice)
         {
             try
