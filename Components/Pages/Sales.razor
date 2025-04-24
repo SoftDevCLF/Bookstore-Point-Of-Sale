@@ -11,7 +11,7 @@
     <nav aria-label="breadcrumb" class="bg-secondary bg-opacity-10 rounded-3">
         <ol class="breadcrumb align-content-center ps-3 pt-1 pb-1">
             <li class="breadcrumb-item"><a href="/">Home</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Sales</li>
+            <li class="breadcrumb-item active" aria-current="page">Sale Reports</li>
         </ol>
     </nav>
     <hr />
@@ -24,8 +24,8 @@
 <div class="container mt-4">
     <!-- Input Form for ISBN and Quantity -->
     <div class="form-group mb-3">
-        <label for="isbnInput">ISBN</label>
-        <input type="text" id="isbnInput" class="form-control" @bind="isbnInput" placeholder="Enter Book ISBN" />
+        <label for="searchInput">Enter ISBN</label>
+        <input type="text" id="searchInput" class="form-control" @bind="searchInput" placeholder="Enter Book ISBN" />
     </div>
 
     <div class="form-group mb-3">
@@ -33,88 +33,114 @@
         <input type="number" id="quantityInput" class="form-control" @bind="quantityInput" placeholder="Enter Quantity" min="1" />
     </div>
 
-    <!-- Add Button -->
     <button class="btn btn-primary" @onclick="AddtoSale">Add to Sale</button>
 </div>
 
+<!-- Display the Sale Items -->
+<h4>Items in Sale</h4>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ISBN</th>
+            <th>Title</th>
+            <th>Quantity</th>
+            <th>Price</th>
+            <th>Subtotal</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in saleItems)
+        {
+            var book = InventoryDatabase.SearchByISBN(item.ISBN); // Get book details by ISBN
+            <tr>
+                <td>@item.ISBN</td>
+                <td>@book?.Title</td>
+                <td>@item.QuantitySold</td>
+                <td>@book?.Price</td>
+                <td>@(item.QuantitySold * (book?.Price ?? 0))</td>
+            </tr>
+        }
+    </tbody>
+</table>
 
-<!--Form to Search Inventory and Add Sale-->
+<h4>Total: @totalAmount</h4>
 
-}
+
+<!--Confirm and Cancel-->
+
+
 
 @code {
     private List<SaleItem> saleItems = new List<SaleItem>();
-    private string searchTitle = "";
-    private string isbnInput = "";
+    private string searchInput;
+    private int saleId;
     private int quantityInput = 1; // Default quantity
     private double totalAmount = 0;
 
-    string searchBy = "isbn";
-    string searchInput;
+	private string searchBy = "isbn"; // Default search by ISBN
+	List<Inventory> foundBooks= new List<Inventory>();
     Inventory foundBook = null;
-    List<Inventory> foundBooks = new();
-    bool searched = false;
 
-
-    // Load inventory
-    protected override async Task OnInitializedAsync()
-    {
-        // Example: Get all books from the database
-        foundBooks = await Task.Run(() => InventoryDatabase.GetAllBooks()); // Assuming you have a method like this
-    }
-
-    //Add books to the Sale
+    // Add books to the Sale
     private async Task AddtoSale()
     {
         foundBook = null;
-        foundBooks.Clear();
-        searched = false;
 
-        // Validate inputs
-        if (string.IsNullOrWhiteSpace(searchInput) || quantityInput <= 0)
+        try
         {
-            await JS.InvokeVoidAsync("alert", "Please enter a valid ISBN and quantity.");
-            return;
-        }
-        if (searchBy == "isbn")
-        {
-            // Check if the book exists in the inventory
-            foundBook = InventoryDatabase.SearchByISBN(isbnInput);
-        }
-        else if (searchBy == "title")
-        {
-            // Check if the book exists in the inventory
-            foundBooks = InventoryDatabase.SearchByTitle(searchInput);
-        }
+            // Validate inputs
+            if (string.IsNullOrWhiteSpace(searchInput) || quantityInput <= 0)
+            {
+                await JS.InvokeVoidAsync("alert", "Please enter a valid ISBN and quantity.");
+                return;
+            }
 
-        searched = true;
-		searchInput = ""; // Clear the search input after searching
+            // Search by ISBN
+            foundBook = InventoryDatabase.SearchByISBN(searchInput); // Search by ISBN
 
-        //If book is found add item to sale
-		if (foundBook != null)
-		{
-			// Book is found in the inventory
-			var book = foundBooks.FirstOrDefault(b => b.ISBN == isbnInput);
+            // Handle the case where no book is found
+            if (foundBook == null)
+            {
+                await JS.InvokeVoidAsync("alert", "Book not found in inventory.");
+                return;
+            }
 
-            //Add the sale item to the list since book is found
-			var saleItem = new SaleItem(0, book.ISBN, quantityInput); // SaleId is generated in the DB
+            // Check stock availability
+            if (foundBook.Quantity < quantityInput)
+            {
+                await JS.InvokeVoidAsync("alert", "Not enough stock available.");
+                return;
+            }
 
-			// Add the sale item to the list
-			SalesDatabase.AddSaleItem(saleItem);
+            // Add the SaleItem to the sale
+            var saleItem = new SaleItem(saleId, foundBook.ISBN, quantityInput);
+            saleItems.Add(saleItem);
+            totalAmount += foundBook.Price * quantityInput;
 
-			// Update inventory after sale
-			book.Quantity -= quantityInput; // Decrease stock in inventory
-			totalAmount += book.Price * quantityInput; // Update total sale amount
-			saleItems.Add(saleItem); // Add the sale item to the list
+            // Update inventory
+            foundBook.Quantity -= quantityInput;
 
-            // Clear input fields after adding the item to the sale
-            isbnInput = "";
+            await JS.InvokeVoidAsync("alert", "Book found and added to the sale.");
+
+            // Clear input fields
+            searchInput = "";
             quantityInput = 1;
-
-		}
+        }
+        catch (Exception ex)
+        {
+            // Catch any unexpected errors and show them
+            await JS.InvokeVoidAsync("alert", $"An error occurred: {ex.Message}");
+        }
     }
 
+    // JS Async Alert Method
+    private async Task JSAlert(string message)
+    {
+        await JS.InvokeVoidAsync("alert", message);
+    }
 }
+}
+    
 
     
 

@@ -7,6 +7,7 @@ using MySqlConnector;
 using BookstorePointOfSale.DataModel;
 using Microsoft.Maui.Controls;
 using System.Data;
+using System.Transactions;
 
 
 
@@ -25,8 +26,6 @@ namespace BookstorePointOfSale.DataViewModel
         //Method to add sale item //isbn, quantity, total, 
         public static SaleItem AddSaleItem(SaleItem saleItem)
         {
-            int saleId = 0;//start sale ID at 0
-
             using (MySqlConnection connection = GetConnection())
             {
                 connection.Open();
@@ -38,10 +37,26 @@ namespace BookstorePointOfSale.DataViewModel
                     command.Parameters.AddWithValue("@quantitySold", saleItem.QuantitySold);
                     command.ExecuteNonQuery();
                 }
+
+                // Update the inventory after the sale
+                string updateQuery = "UPDATE inventory SET book_stock = book_stock - @quantitySold WHERE isbn = @isbn";
+                using (MySqlCommand updateCommand = new MySqlCommand(updateQuery, connection))
+                {
+                    updateCommand.Parameters.AddWithValue("@quantitySold", saleItem.QuantitySold);
+                    updateCommand.Parameters.AddWithValue("@isbn", saleItem.ISBN);
+                    updateCommand.ExecuteNonQuery();
+                }
+
+                // Get the last inserted sale ID
+                string getSaleIdQuery = "SELECT LAST_INSERT_ID();";
+                using (MySqlCommand getSaleIdCommand = new MySqlCommand(getSaleIdQuery, connection))
+                {
+                    saleItem.SaleId = Convert.ToInt32(getSaleIdCommand.ExecuteScalar()); // Assign the correct SaleId
+                }
             }
-            saleItem.SaleId = saleId; //set the sale ID to the last inserted ID
             return saleItem; //return the sale item
         }
+
 
         //Method to confirm sale, reduces the quantity of the book in stock
         public static bool ConfirmSale(SaleItem saleItem)
