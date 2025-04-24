@@ -68,25 +68,22 @@
 
 
 
-
-
 @code {
-    // Parameter to hold the customer ID
+    //Parameter to hold the customer ID
     [Parameter]
-    public int customerId { get; set; } 
-
+    public int customerId { get; set; }
 
     private List<Inventory> inventoryList = new List<Inventory>();
-    private List<Customer> customers = new List<Customer>();
     private List<SaleItem> saleItems = new List<SaleItem>();
 
     private int selectedCustomerId;
     private bool isLoaded = false;
 
     private string isbnInput;
-	private int quantityInput;
+    private int quantityInput;
+    private int saleId = 1; //Initialized sale ID
 
-    //Fetching Customer and Inventory
+    //Fetching Inventory
     protected override async Task OnInitializedAsync()
     {
         inventoryList = await Task.Run(() => InventoryDatabase.GetAllBooks());
@@ -98,22 +95,41 @@
     {
         //Try to find the book in inventory
 
-        Inventory foundBook = InventoryDatabase.SearchByISBN(inputISBN);
+        Inventory foundBook = InventoryDatabase.SearchByISBN(isbnInput);
+
+        //Check if the book is found
         if (foundBook == null)
         {
             await JS.InvokeVoidAsync("alert", "Book not found.");
             return;
         }
+        //Check if the quantity is valid
+        if (quantityInput <= 0)
+        {
+            await JS.InvokeVoidAsync("alert", "Invalid quantity.");
+            return;
+        }
+
+        saleId++; //Increment the sale ID
+
+
         //Create Sale Item with what is needed
-        SaleItem saleItem = new SaleItem
-            {
-                ISBN = foundBook.ISBN,
-                QuantitySold = quantityInput,
-            };
+        SaleItem saleItem = new SaleItem(saleId, foundBook.ISBN, quantityInput);
+
         //Add the SaleItem to the saleitems list
         saleItems.Add(saleItem);
+
+        //Call the method to add the sale item to the database
+		SaleItem savedSaleItem = SalesDatabase.AddSaleItem(saleItem);
+        
+
+        //Update Saleitems list with database saleId
+		saleItem.SaleId = savedSaleItem.SaleId;
+
+
     }
-    }
+}
+    
 
    
 
