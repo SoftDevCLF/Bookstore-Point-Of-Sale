@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace BookstorePointOfSale.Services
 {
-    public interface ICustomerValidation
+    public interface IValidationService
     {
         Task<bool> ValidateName(string firstName, string lastName);
         Task<bool> ValidatePhoneNumber(string phoneNumber);

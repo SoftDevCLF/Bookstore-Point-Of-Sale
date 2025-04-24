@@ -10,7 +10,7 @@ namespace BookstorePointOfSale.Services
     /// <summary>
     /// Class to manage customer validation
     /// </summary>
-    public class ValidationService : ICustomerValidation
+    public class ValidationService : IValidationService
     {
         /// <summary>
         /// Alert service to display alerts
