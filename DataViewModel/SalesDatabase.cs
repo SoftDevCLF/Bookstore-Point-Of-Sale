@@ -38,79 +38,66 @@ namespace BookstorePointOfSale.DataViewModel
                     command.Parameters.AddWithValue("@quantitySold", saleItem.QuantitySold);
                     command.ExecuteNonQuery();
                 }
-                query = "SELECT LAST_INSERT_ID();"; //select last inserted ID for the sale item
-                using (MySqlCommand command = new MySqlCommand(query, connection)) //using command, execute query
-                {
-                    saleId = Convert.ToInt32(command.ExecuteScalar()); //Convert to int and returns the first value
-                }
             }
             saleItem.SaleId = saleId; //set the sale ID to the last inserted ID
             return saleItem; //return the sale item
         }
 
         //Method to confirm sale, reduces the quantity of the book in stock
-        public static bool ConfirmSale(int saleId, string isbn, int quantitySold)
+        public static bool ConfirmSale(SaleItem saleItem)
         {
-            //Update the inventory to reduce the quantity of the book in stock
             using (MySqlConnection connection = GetConnection())
             {
                 connection.Open();
-                string query = "UPDATE book SET book_stock = book_stock - @quantitySold WHERE isbn = @isbn;";
-                using (MySqlCommand command = new MySqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@isbn", isbn);
-                    command.Parameters.AddWithValue("@quantitySold", quantitySold);
-                    command.ExecuteNonQuery();
-                }
-            }
-            //Add the sale item
-            string sql = "INSERT INTO sale_item (sale_id, isbn, quantity_sold) VALUES (@saleId, @isbn, @quantitySold);";
-            using (MySqlConnection connection = GetConnection())
-            {
-                connection.Open();
-                using (MySqlCommand command = new MySqlCommand(sql, connection))
-                {
-                    command.Parameters.AddWithValue("@saleId", saleId);
-                    command.Parameters.AddWithValue("@isbn", isbn);
-                    command.Parameters.AddWithValue("@quantitySold", quantitySold);
-                    command.ExecuteNonQuery();
-                }
-            }
-            Console.WriteLine("Sale confirmed succcessfully");
-            return true; //return true to indicate success
 
+                // 1. Reduce the inventory stock
+                string updateStockQuery = "UPDATE book SET book_stock = book_stock - @quantitySold WHERE isbn = @isbn;";
+                using (MySqlCommand updateCommand = new MySqlCommand(updateStockQuery, connection))
+                {
+                    updateCommand.Parameters.AddWithValue("@isbn", saleItem.ISBN);
+                    updateCommand.Parameters.AddWithValue("@quantitySold", saleItem.QuantitySold);
+                    updateCommand.ExecuteNonQuery();
+                }
+
+                // 2. Add sale item to sale_item table
+                AddSaleItem(saleItem);
+
+                Console.WriteLine("Sale confirmed successfully.");
+                return true;
+            }
         }
+
 
         //Method to cancel sale, increases the quantity of the book in stock
-        public static bool CancelSale(int saleId, string isbn, int quantitySold)
+       public static bool CancelSale(SaleItem saleItem)
+{
+    using (MySqlConnection connection = GetConnection())
+    {
+        connection.Open();
+
+        // 1. Increase the inventory stock
+        string updateStockQuery = "UPDATE book SET book_stock = book_stock + @quantitySold WHERE isbn = @isbn;";
+        using (MySqlCommand updateCommand = new MySqlCommand(updateStockQuery, connection))
         {
-            //Update the inventory to increase the quantity of the book in stock
-            using (MySqlConnection connection = GetConnection())
-            {
-                connection.Open();
-                string query = "UPDATE book SET book_stock = book_stock + @quantitySold WHERE isbn = @isbn;";
-                using (MySqlCommand command = new MySqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@isbn", isbn);
-                    command.Parameters.AddWithValue("@quantitySold", quantitySold);
-                    command.ExecuteNonQuery();
-                }
-            }
-            //Delete the sale item
-            string sql = "DELETE FROM sale_item WHERE sale_id = @saleId AND isbn = @isbn;";
-            using (MySqlConnection connection = GetConnection())
-            {
-                connection.Open();
-                using (MySqlCommand command = new MySqlCommand(sql, connection))
-                {
-                    command.Parameters.AddWithValue("@saleId", saleId);
-                    command.Parameters.AddWithValue("@isbn", isbn);
-                    command.ExecuteNonQuery();
-                }
-            }
-            Console.WriteLine("Sale cancelled succcessfully");
-            return true; //return true to indicate success
+            updateCommand.Parameters.AddWithValue("@isbn", saleItem.ISBN);
+            updateCommand.Parameters.AddWithValue("@quantitySold", saleItem.QuantitySold);
+            updateCommand.ExecuteNonQuery();
         }
+
+        // 2. Remove the sale item from sale_item table
+        string deleteQuery = "DELETE FROM sale_item WHERE sale_id = @saleId AND isbn = @isbn;";
+        using (MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, connection))
+        {
+            deleteCommand.Parameters.AddWithValue("@saleId", saleItem.SaleId);
+            deleteCommand.Parameters.AddWithValue("@isbn", saleItem.ISBN);
+            deleteCommand.ExecuteNonQuery();
+        }
+
+        Console.WriteLine("Sale cancelled successfully.");
+        return true;
+    }
+}
+
 
 
 
@@ -245,9 +232,69 @@ namespace BookstorePointOfSale.DataViewModel
             return receiptBuilder.ToString();
         }
 
+        //Report One: getting total sales by date
+        public static void GetTotalSalesByDate(DateTime date)
+        {
+            string query = @"SELECT SUM(b.unit_price * i.quantity_sold) AS TotalSales
+                            FROM sales s
+                            JOIN sale_item i ON s.sale_id = i.sale_id
+                            JOIN book b ON i.isbn = b.isbn
+                            WHERE DATE(s.sale_date) = @date";
+            using (var connection = GetConnection())
+            {
+                connection.Open();
+                using (var command = new MySqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@date", date);
+                    var totalSales = command.ExecuteScalar();
+                    Console.WriteLine($"Total sales for {date.ToString("yyyy-MM-dd")}: {totalSales}");
+                }
+            }
+        }
 
+        //Report Two: getting total sales per customer
+        public static void GetTotalSalesByCustomer(int customerId)
+        {
+            string query = @"SELECT SUM(b.unit_price * i.quantity_sold) AS TotalSales
+                            FROM sales s
+                            JOIN sale_item i ON s.sale_id = i.sale_id
+                            JOIN book b ON i.isbn = b.isbn
+                            WHERE s.customer_id = @customerId";
+            using (var connection = GetConnection())
+            {
+                connection.Open();
+                using (var command = new MySqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@customerId", customerId);
+                    var totalSales = command.ExecuteScalar();
+                    Console.WriteLine($"Total sales for customer ID {customerId}: {totalSales}");
+                }
+            }
+        }
+
+        //Report Three: getting total sales per date period
+        public static void GetTotalSalesByDatePeriod(DateTime startDate, DateTime endDate)
+        {
+            string query = @"SELECT SUM(b.unit_price * i.quantity_sold) AS TotalSales
+                            FROM sales s
+                            JOIN sale_item i ON s.sale_id = i.sale_id
+                            JOIN book b ON i.isbn = b.isbn
+                            WHERE DATE(s.sale_date) BETWEEN @startDate AND @endDate";
+            using (var connection = GetConnection())
+            {
+                connection.Open();
+                using (var command = new MySqlCommand(query, connection))
+                {
+                    command.Parameters.AddWithValue("@startDate", startDate);
+                    command.Parameters.AddWithValue("@endDate", endDate);
+                    var totalSales = command.ExecuteScalar();
+                    Console.WriteLine($"Total sales from {startDate.ToString("yyyy-MM-dd")} to {endDate.ToString("yyyy-MM-dd")}: {totalSales}");
+                }
+            }
+        }
     }
 }
+
 
 
 

@@ -2,7 +2,7 @@
 @using BookstorePointOfSale.DataModel
 @using BookstorePointOfSale.DataViewModel
 @inject NavigationManager Navigation
-@inject IJSRuntime JS﻿
+@inject IJSRuntime JS
 
 <h3>Sales</h3>
 
@@ -11,274 +11,115 @@
     <nav aria-label="breadcrumb" class="bg-secondary bg-opacity-10 rounded-3">
         <ol class="breadcrumb align-content-center ps-3 pt-1 pb-1">
             <li class="breadcrumb-item"><a href="/">Home</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Sale Reports</li>
+            <li class="breadcrumb-item active" aria-current="page">Sales</li>
         </ol>
     </nav>
     <hr />
     <h1>Sales</h1>
     <hr />
-    <p class="ms-2 text-muted">Welcome to the Sales Homepage</p>
+    <p class="ms-2 text-muted">Search inventory and manage sales.</p>
+</div>
 
-    <h3>Add Items to Sale</h3>
-    <!-- Select Input Type -->
-    <div class="mb-3">
-        <label class="form-label">Add Item By:</label>
-        <select @bind="inputMode" class="form-select">
-            <option value="ISBN">ISBN</option>
-            <option value="Title">Title</option>
-        </select>
-    </div>
+<h3>Add Book to Sale</h3>
+<div class="mb-3">
+    <label>ISBN:</label>
+    <input type="text" class="form-control" @bind="isbnInput" />
+</div>
 
-    <!-- Conditional Input Fields -->
-    <div class="mb-3">
-        @if (inputMode == "ISBN")
-        {
-            <label class="form-label">ISBN:</label>
-            <input type="text" @bind="isbn" class="form-control" placeholder="Enter ISBN" />
-        }
-        else if (inputMode == "Title")
-        {
-            <label class="form-label">Book Title:</label>
-            <input type="text" @bind="bookTitle" class="form-control" placeholder="Enter Book Title" />
-        }
-    </div>
+<div class="mb-3">
+    <label>Quantity:</label>
+    <input type="number" class="form-control" @bind="quantityInput" />
+</div>
 
-    <!-- Quantity Input -->
-    <div class="mb-3">
-        <label class="form-label">Quantity:</label>
-        <input type="number" @bind="quantitySold" class="form-control" />
-    </div>
+<button class="btn btn-primary" @onclick="AddItemToSale">Add to Sale</button>
 
-    <!-- Add to Sale Button -->
-    <button class="btn btn-success mb-3" @onclick="AddBookItemToSale">Add Item to Sale</button>
+<hr />
 
-    @if (saleItems != null && saleItems.Count > 0)
-    {
-        <h3>Current Sale Items</h3>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>ISBN</th>
-                    <th>Book Title</th>
-                    <th>Quantity</th>
-                    <th>Unit Price</th>
-                    <th>Total</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in saleItems)
+@if (saleItems.Count > 0)
+{
+    <h4 class="mt-4">Sale Summary</h4>
+    <table class="table table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>ISBN</th>
+                <th>Title</th>
+                <th>Unit Price</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in saleItems)
+            {
+                var book = inventoryList.FirstOrDefault(b => b.ISBN == item.ISBN);
+
+                if (book != null)
                 {
                     <tr>
-                        <td>@item.ISBN</td>
-                        <td>@item.BookTitle</td>
-                        <td>@item.QuantitySold</td>
-                        <td>@item.ItemPrice.ToString("C")</td>
-                        <td>@((item.QuantitySold * item.ItemPrice).ToString("C"))</td>
+                        <td>@book.ISBN</td>
+                        <td>@book.Title</td>
+                        <td>@book.Price.ToString("C")</td>
+                        <td>@(book.Price * item.QuantitySold).ToString("C")</td>
                     </tr>
                 }
-            </tbody>
-            <tfoot>
-                <tr class="table-active">
-                    <td colspan="4" class="text-end fw-bold">Grand Total:</td>
-                    <td class="fw-bold">@saleItems.Sum(i => i.QuantitySold * i.ItemPrice).ToString("C")</td>
-                </tr>
-            </tfoot>
-        </table>
+            }
+        </tbody>
+    </table>
+}
 
-        <div class="d-flex gap-2 mb-3">
-            <button class="btn btn-warning" @onclick="ConfirmSale">Confirm Sale</button>
-            <button class="btn btn-danger" @onclick="CancelSale">Cancel Sale</button>
-        </div>
-    }
 
-    <!--Receipt Info Section -->
-    <div class="col-6  ">
-        <h3>Receipt</h3>
-        @if (!string.IsNullOrWhiteSpace(receipt))
-        {
-            <div class="border rounded bg-white p-3 mt-3">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h5>Receipt Preview</h5>
-                    <button class="btn btn-sm btn-outline-secondary" @onclick="GenerateReceipt">
-                        <i class="bi bi-printer"></i> Print
-                    </button>
-                </div>
-                <div class="receipt-content font-monospace bg-light p-3">
-                    <pre>@receipt</pre>
-                </div>
-            </div>
-        }
-        else
-        {
-            <p class="text-muted">No receipt generated yet.</p>
-        }
-    </div>
 
-</div>
 
 
 @code {
-    //Parameter to hold the customer ID
-	[Parameter]
-	public int customerId { get; set; } // Customer ID passed from the URL
- 
-    //Form Inputs
-    private string isbn;
-    private int quantitySold;
-    private decimal itemPrice;
-    private string statusMessage;
-    private string receipt;
-    private string bookTitle; // Book Title
-    private int saleId; // Current Sale ID
+    // Parameter to hold the customer ID
+    [Parameter]
+    public int customerId { get; set; } 
 
-    // Search Type
-    string searchBy = "isbn";
-    string searchInput;
-    Inventory foundBook = null;
-    List<Inventory> foundBooks = new();
-    bool searched = false;
 
-    private List<SaleItem> saleItems = new(); // Holds Sale Items
+    private List<Inventory> inventoryList = new List<Inventory>();
+    private List<Customer> customers = new List<Customer>();
+    private List<SaleItem> saleItems = new List<SaleItem>();
 
-    //Begin the sale process
-    private async Task CreateSaleSession()
+    private int selectedCustomerId;
+    private bool isLoaded = false;
+
+    private string isbnInput;
+	private int quantityInput;
+
+    //Fetching Customer and Inventory
+    protected override async Task OnInitializedAsync()
     {
-        if (customerId <= 0)
-        {
-            await JS.InvokeVoidAsync("alert", "Please enter a valid customer ID.");
-            return;
-        }
-        saleId = SalesDatabase.CreateSaleSession(customerId);
-        statusMessage = saleId > 0 ? "Sale session created successfully." : "Failed to create sale session.";
+        inventoryList = await Task.Run(() => InventoryDatabase.GetAllBooks());
+        isLoaded = true;
     }
 
-
-    //Add Book to Sale
-    private string inputMode = "ISBN"; // Default input type
-    private async Task AddBookItemToSale()
+    //Add Item to Sale
+    private async Task AddItemToSale()
     {
-        if (saleId <= 0)
-        {
-            await JS.InvokeVoidAsync("alert", "Please create a sale session first.");
-            return;
-        }
-        if (quantitySold <= 0)
-        {
-            await JS.InvokeVoidAsync("alert", "Please enter a quantity greater than 0.");
-            return;
-        }
+        //Try to find the book in inventory
 
-		SaleItem book = null; // Placeholder for book item
-
-        // Retrieve book details based on input mode
-        if (inputMode == "ISBN")
-        {
-            if (string.IsNullOrEmpty(isbn))
-            {
-                await JS.InvokeVoidAsync("alert", "Please enter a valid ISBN.");
-                return;
-            }
-            book = SalesDatabase.GetSaleItemByIsbn(isbn);
-        }
-        else if (inputMode == "Title")
-        {
-            if (string.IsNullOrEmpty(bookTitle))
-            {
-                await JS.InvokeVoidAsync("alert", "Please enter a valid book title.");
-                return;
-            }
-            book = SalesDatabase.GetSaleItemByTitle(bookTitle); // Ensure this method exists
-        }
-
-        if (book == null)
+        Inventory foundBook = InventoryDatabase.SearchByISBN(inputISBN);
+        if (foundBook == null)
         {
             await JS.InvokeVoidAsync("alert", "Book not found.");
             return;
         }
-
-        // Add book information to sale
-        bool result = SalesDatabase.AddSaleItem(saleId, book.ISBN, book.BookTitle, quantitySold, book.ItemPrice);
-        if (result)
-        {
-            var existingItem = saleItems.FirstOrDefault(item => item.ISBN == book.ISBN);
-            if (existingItem != null)
+        //Create Sale Item with what is needed
+        SaleItem saleItem = new SaleItem
             {
-                existingItem.QuantitySold += quantitySold;
-            }
-            else
-            {
-                saleItems.Add(new SaleItem(book.ISBN, book.BookTitle, quantitySold, book.ItemPrice));
-            }
-
-            statusMessage = "Item added to sale successfully.";
-        }
-        else
-        {
-            statusMessage = "Failed to add item to sale.";
-        }
+                ISBN = foundBook.ISBN,
+                QuantitySold = quantityInput,
+            };
+        //Add the SaleItem to the saleitems list
+        saleItems.Add(saleItem);
+    }
     }
 
-    //Confirm the sale
-    private async Task ConfirmSale()
-    {
-        if (saleId <= 0)
-        {
-            await JS.InvokeVoidAsync("alert", "Please create a sale session first.");
-            return;
-        }
-        if (saleItems.Count == 0)
-        {
-            await JS.InvokeVoidAsync("alert", "No items in the sale.");
-            return;
-        }
-        var result = SalesDatabase.ConfirmSale(saleId);
-        if (result)
-        {
-            receipt = SalesDatabase.GenerateReceipt(saleId);
-            statusMessage = "Sale confirmed successfully.";
-            saleId = 0; // Reset sale ID after confirmation
-            saleItems.Clear(); // Clear sale items after confirmation
-        }
-        else
-        {
-            statusMessage = "Failed to confirm sale.";
-        }
-    }
+   
 
-    //Cancel The Sale
-    private async Task CancelSale()
-    {
-        if (saleId <= 0)
-        {
-            await JS.InvokeVoidAsync("alert", "Please create a sale session first.");
-            return;
-        }
-        var result = SalesDatabase.CancelSale(saleId);
-        if (result)
-        {
-            statusMessage = "Sale cancelled successfully!";
-            saleId = 0; // Reset sale ID after cancellation
-            saleItems.Clear(); // Clear sale items after cancellation
-        }
-        else
-        {
-            statusMessage = "Failed to cancel sale.";
-        }
-    }
 
-    //Generate a Receipt
-    private async Task GenerateReceipt()
-    {
-        receipt = SalesDatabase.GenerateReceipt(saleId);
-		await JS.InvokeVoidAsync("alert", "Receipt generated successfully.");
-		StateHasChanged(); // Refresh the UI to show the receipt
-    }
+	
+        
 
-    //JS alert
-    private async Task JSAlert(string message)
-    {
-        await JS.InvokeVoidAsync("alert", message);
-    }
 
-}
-
+  
