@@ -36,7 +36,7 @@ namespace BookstorePointOfSale.DataModel
         /// </summary>
         /// <param name="isbn">ISBN of the book</param>
         /// <param name="quantitySold">Quantity of the book sold</param>
-        /// <param name="price">Unit price of the book</param>
+        /// <param name="saleId">Sale id of the book</param>
         public SaleItem(int saleId, string isbn, int quantitySold)
         {
             SaleId = saleId;

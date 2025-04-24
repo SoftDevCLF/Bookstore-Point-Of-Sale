@@ -1,8 +1,9 @@
-﻿@page "/sales"
+﻿@page "/sales/{customerId:int}"
 @using BookstorePointOfSale.DataModel
 @using BookstorePointOfSale.DataViewModel
 @inject NavigationManager Navigation
 @inject IJSRuntime JS﻿
+
 <h3>Sales</h3>
 
 <!-- Breadcrumb Navigation -->
@@ -17,26 +18,6 @@
     <h1>Sales</h1>
     <hr />
     <p class="ms-2 text-muted">Welcome to the Sales Homepage</p>
-
-    <!-- Customer ID Input -->
-    <h3>Start A New Sale Session</h3>
-    <div class="mb-3">
-        <label class="form-label">Customer ID:</label>
-        <input type="number" @bind="customerId" class="form-control" />
-    </div>
-    <button class="btn btn-primary mb-3" @onclick="CreateSaleSession">Start Sale Session</button>
-
-    @if (!string.IsNullOrEmpty(statusMessage))
-    {
-        <p class="alert alert-info">@statusMessage</p>
-    }
-
-    @if (saleId > 0)
-    {
-        <div class="alert alert-info">
-            Active Sale ID: @saleId | Customer: @customerId
-        </div>
-    }
 
     <h3>Add Items to Sale</h3>
     <!-- Select Input Type -->
@@ -137,8 +118,11 @@
 
 
 @code {
+    //Parameter to hold the customer ID
+	[Parameter]
+	public int customerId { get; set; } // Customer ID passed from the URL
+ 
     //Form Inputs
-    private int customerId;
     private string isbn;
     private int quantitySold;
     private decimal itemPrice;
