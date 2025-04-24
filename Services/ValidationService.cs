@@ -10,7 +10,7 @@ namespace BookstorePointOfSale.Services
     /// <summary>
     /// Class to manage customer validation
     /// </summary>
-    public class CustomerValidation : ICustomerValidation
+    public class ValidationService : ICustomerValidation
     {
         /// <summary>
         /// Alert service to display alerts
@@ -21,7 +21,7 @@ namespace BookstorePointOfSale.Services
         /// Constructor
         /// </summary>
         /// <param name="alertService">Alert service</param>
-        public CustomerValidation( AlertService alertService)
+        public ValidationService( AlertService alertService)
         {
             
             _alertService = alertService;
