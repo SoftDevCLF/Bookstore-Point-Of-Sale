@@ -261,6 +261,50 @@ namespace BookstorePointOfSale.DataViewModel
             }
             return inventoryList;
         }
+
+        public static List<Inventory> SearchByTitle (string title) 
+        {
+            List<Inventory> matchingBooks = new List<Inventory>();
+
+            using (MySqlConnection connection = GetConnection()) 
+            {
+                connection.Open();
+
+                string sql = @"
+                    SELECT 
+                        b.isbn, b.book_title, b.author, b.edition, b.editorial,
+                        b.year, b.genre, b.comments, b.unit_price, i.book_stock
+                    FROM book b
+                    JOIN inventory i ON b.isbn = i.isbn
+                    WHERE LOWER(b.book_title) LIKE CONCAT('%', LOWER(@title), '%')";
+
+                using (MySqlCommand command = new MySqlCommand( sql, connection)) 
+                {
+                    command.Parameters.AddWithValue("@title", title);
+
+                    using (MySqlDataReader reader = command.ExecuteReader())
+                    {
+                        while (reader.Read()) 
+                        {
+                            Inventory item = new Inventory(
+                                reader.GetString("isbn"),
+                                reader.GetString("book_title"),
+                                reader.GetString("author"),
+                                reader.GetInt32("edition"),
+                                reader.GetString("editorial"),
+                                reader.GetString("year"),
+                                reader.GetString("genre"),
+                                reader.IsDBNull("comments") ? null : reader.GetString("Comments"),
+                                reader.GetInt32("book_stock"),
+                                (double) reader.GetDecimal("unit_price")
+                            );
+                            matchingBooks.Add(item);    
+                        }
+                    }
+                }
+            }
+            return matchingBooks;
+        }
     }
 
 }
