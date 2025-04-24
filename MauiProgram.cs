@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Logging;
-using BookstorePointOfSale.Services;
 
 namespace BookstorePointOfSale;
 
@@ -16,14 +15,9 @@ public static class MauiProgram
 			});
 
 		builder.Services.AddMauiBlazorWebView();
-        builder.Services.AddScoped<ValidationService>();//Dependency injection for customer validation quick access. It is scoped so it will only creates one instance per request
-        builder.Services.AddScoped<NavigationService>();
-        builder.Services.AddScoped<AlertService>();
-
-
 
 #if DEBUG
-        builder.Services.AddBlazorWebViewDeveloperTools();
+		builder.Services.AddBlazorWebViewDeveloperTools();
 		builder.Logging.AddDebug();
 #endif
 
