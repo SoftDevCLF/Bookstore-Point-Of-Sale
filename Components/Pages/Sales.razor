@@ -22,18 +22,26 @@
 
 <h3>Add Book to Sale</h3>
 <div class="mb-3">
-    <label>ISBN:</label>
-    <input type="text" class="form-control" @bind="isbnInput" />
+    <button class="btn btn-success mb-3" @onclick="AddInputField">Add Another Book</button>
 </div>
 
-<div class="mb-3">
-    <label>Quantity:</label>
-    <input type="number" class="form-control" @bind="quantityInput" />
-</div>
+@for (int i = 0; i < isbnInputs.Count; i++)
+{
+    <div class="mb-3">
+        <label>ISBN:</label>
+        <input type="text" class="form-control" @bind="isbnInputs[i]" />
+    </div>
+
+    <div class="mb-3">
+        <label>Quantity:</label>
+        <input type="number" class="form-control" @bind="quantityInputs[i]" />
+    </div>
+}
 
 <button class="btn btn-primary" @onclick="AddItemToSale">Add to Sale</button>
 
 <hr />
+
 
 @if (saleItems.Count > 0)
 {
@@ -66,8 +74,6 @@
     </table>
 }
 
-
-
 @code {
     //Parameter to hold the customer ID
     [Parameter]
@@ -75,13 +81,12 @@
 
     private List<Inventory> inventoryList = new List<Inventory>();
     private List<SaleItem> saleItems = new List<SaleItem>();
+    private List<string> isbnInputs = new List<string>();
+    private List<int> quantityInputs = new List<int>();
 
     private int selectedCustomerId;
     private bool isLoaded = false;
 
-    private string isbnInput;
-    private int quantityInput;
-    private int saleId = 1; //Initialized sale ID
 
     //Fetching Inventory
     protected override async Task OnInitializedAsync()
@@ -90,45 +95,59 @@
         isLoaded = true;
     }
 
+    //Input fields for ISBN and Quantity
+    private void AddInputField()
+    {
+        isbnInputs.Add(string.Empty);
+        quantityInputs.Add(1); // Default quantity
+    }
+
     //Add Item to Sale
     private async Task AddItemToSale()
     {
-        //Try to find the book in inventory
-
-        Inventory foundBook = InventoryDatabase.SearchByISBN(isbnInput);
-
-        //Check if the book is found
-        if (foundBook == null)
+        for (int i = 0; i < isbnInputs.Count; i++)
         {
-            await JS.InvokeVoidAsync("alert", "Book not found.");
-            return;
+            var isbn = isbnInputs[i];
+            var quantity = quantityInputs[i];
+            if (string.IsNullOrEmpty(isbn) || quantity <= 0)
+            {
+                await JS.InvokeVoidAsync("alert", "Please enter valid ISBN and quantity.");
+                return;
+            }
+
+            //Try to find the book in inventory
+
+            Inventory foundBook = InventoryDatabase.SearchByISBN(isbn);
+
+            //Check if the book is found
+            if (foundBook == null)
+            {
+                await JS.InvokeVoidAsync("alert", "Book not found.");
+                return;
+            }
+
+            //Create Sale Item with what is needed
+            SaleItem saleItem = new SaleItem(0, foundBook.ISBN, quantity); //Zero since the saleId is AutoIncremented in the database
+            saleItems.Add(saleItem);
+
+            //Call the method to add the sale item to the database
+            SaleItem savedSaleItem = SalesDatabase.AddSaleItem(saleItem);
+
+
+            //Update Saleitems list with database saleId
+            saleItem.SaleId = savedSaleItem.SaleId;
         }
-        //Check if the quantity is valid
-        if (quantityInput <= 0)
-        {
-            await JS.InvokeVoidAsync("alert", "Invalid quantity.");
-            return;
-        }
-
-        saleId++; //Increment the sale ID
-
-
-        //Create Sale Item with what is needed
-        SaleItem saleItem = new SaleItem(saleId, foundBook.ISBN, quantityInput);
-
-        //Add the SaleItem to the saleitems list
-        saleItems.Add(saleItem);
-
-        //Call the method to add the sale item to the database
-		SaleItem savedSaleItem = SalesDatabase.AddSaleItem(saleItem);
-        
-
-        //Update Saleitems list with database saleId
-		saleItem.SaleId = savedSaleItem.SaleId;
-
-
     }
+
+    //JS Async Alert Method
+    private async Task JSAlert(string message)
+    {
+        await JS.InvokeVoidAsync("alert", message);
+    }
+
+
 }
+
     
 
    

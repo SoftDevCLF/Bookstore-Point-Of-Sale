@@ -50,7 +50,7 @@ namespace BookstorePointOfSale.DataViewModel
             {
                 connection.Open();
 
-                // 1. Reduce the inventory stock
+                //Reduce the inventory stock
                 string updateStockQuery = "UPDATE book SET book_stock = book_stock - @quantitySold WHERE isbn = @isbn;";
                 using (MySqlCommand updateCommand = new MySqlCommand(updateStockQuery, connection))
                 {
@@ -59,7 +59,7 @@ namespace BookstorePointOfSale.DataViewModel
                     updateCommand.ExecuteNonQuery();
                 }
 
-                // 2. Add sale item to sale_item table
+                //Add sale item to sale_item table
                 AddSaleItem(saleItem);
 
                 Console.WriteLine("Sale confirmed successfully.");
@@ -69,114 +69,35 @@ namespace BookstorePointOfSale.DataViewModel
 
 
         //Method to cancel sale, increases the quantity of the book in stock
-       public static bool CancelSale(SaleItem saleItem)
-{
-    using (MySqlConnection connection = GetConnection())
-    {
-        connection.Open();
-
-        // 1. Increase the inventory stock
-        string updateStockQuery = "UPDATE book SET book_stock = book_stock + @quantitySold WHERE isbn = @isbn;";
-        using (MySqlCommand updateCommand = new MySqlCommand(updateStockQuery, connection))
+        public static bool CancelSale(SaleItem saleItem)
         {
-            updateCommand.Parameters.AddWithValue("@isbn", saleItem.ISBN);
-            updateCommand.Parameters.AddWithValue("@quantitySold", saleItem.QuantitySold);
-            updateCommand.ExecuteNonQuery();
+            using (MySqlConnection connection = GetConnection())
+            {
+                connection.Open();
+
+                //Increase the inventory stock
+                string updateStockQuery = "UPDATE book SET book_stock = book_stock + @quantitySold WHERE isbn = @isbn;";
+                using (MySqlCommand updateCommand = new MySqlCommand(updateStockQuery, connection))
+                {
+                    updateCommand.Parameters.AddWithValue("@isbn", saleItem.ISBN);
+                    updateCommand.Parameters.AddWithValue("@quantitySold", saleItem.QuantitySold);
+                    updateCommand.ExecuteNonQuery();
+                }
+
+                //Remove the sale item from sale_item table
+                string deleteQuery = "DELETE FROM sale_item WHERE sale_id = @saleId AND isbn = @isbn;";
+                using (MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, connection))
+                {
+                    deleteCommand.Parameters.AddWithValue("@saleId", saleItem.SaleId);
+                    deleteCommand.Parameters.AddWithValue("@isbn", saleItem.ISBN);
+                    deleteCommand.ExecuteNonQuery();
+                }
+
+                Console.WriteLine("Sale cancelled successfully.");
+                return true;
+            }
         }
-
-        // 2. Remove the sale item from sale_item table
-        string deleteQuery = "DELETE FROM sale_item WHERE sale_id = @saleId AND isbn = @isbn;";
-        using (MySqlCommand deleteCommand = new MySqlCommand(deleteQuery, connection))
-        {
-            deleteCommand.Parameters.AddWithValue("@saleId", saleItem.SaleId);
-            deleteCommand.Parameters.AddWithValue("@isbn", saleItem.ISBN);
-            deleteCommand.ExecuteNonQuery();
-        }
-
-        Console.WriteLine("Sale cancelled successfully.");
-        return true;
-    }
-}
-
-
-
-
-        ////Method to retrieve sale item using ISBN
-        //public static SaleItem? GetSaleItemByIsbn(string isbn)
-        //{
-        //    try
-        //    {
-        //        SaleItem? saleItem = null;
-
-        //        using (MySqlConnection connection = GetConnection())
-        //        {
-        //            connection.Open();
-
-        //            string query = "SELECT s.isbn, s.book_title, s.quantity_sold, s.item_price FROM sale_item s WHERE s.isbn = @isbn;";
-
-        //            using (MySqlCommand command = new MySqlCommand(query, connection))
-        //            {
-        //                command.Parameters.AddWithValue("@isbn", isbn);
-        //                using (MySqlDataReader reader = command.ExecuteReader())
-        //                {
-        //                    if (reader.Read())
-        //                    {
-        //                        // Create a SaleItem object and populate it with data from the database
-        //                        saleItem = new SaleItem(
-        //                            reader.GetString(0), // isbn
-        //                            reader.GetString(1), // bookTitle
-        //                            reader.GetInt32(2), // quantity_sold
-        //                            reader.GetDecimal(3) // item_price
-        //                        );
-        //                    }
-        //                }
-        //            }
-        //        }
-        //        return saleItem; // Return the SaleItem object
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Console.WriteLine($"Error in GetSaleItemByIsbn: {ex.Message}");
-        //        return null; // Return null to indicate failure
-        //    }
-        //}
-
-        ////Method to retrieve sale item using TITLE
-        //public static SaleItem? GetSaleItemByTitle(string bookTitle)
-        //{
-        //    try
-        //    {
-        //        SaleItem? saleItem = null;
-        //        using (MySqlConnection connection = GetConnection())
-        //        {
-        //            connection.Open();
-        //            string query = "SELECT s.isbn, s.book_title, s.quantity_sold, s.item_price FROM sale_item s WHERE s.book_title LIKE CONCAT('%', @bookTitle, '%');";
-        //            using (MySqlCommand command = new MySqlCommand(query, connection))
-        //            {
-        //                command.Parameters.AddWithValue("@bookTitle", bookTitle);
-        //                using (MySqlDataReader reader = command.ExecuteReader())
-        //                {
-        //                    if (reader.Read())
-        //                    {
-        //                        // Create a SaleItem object and populate it with data from the database
-        //                        saleItem = new SaleItem(
-        //                            reader.GetString(0), // isbn
-        //                            reader.GetString(1), // bookTitle
-        //                            reader.GetInt32(2), // quantity_sold
-        //                            reader.GetDecimal(3) // item_price
-        //                        );
-        //                    }
-        //                }
-        //            }
-        //        }
-        //        return saleItem; // Return the SaleItem object
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Console.WriteLine($"Error in GetSaleItemByTile: {ex.Message}");
-        //        return null; // Return null to indicate failure
-        //    }
-        //}
+  
 
         //Method to Generate A Receipt
         public static string GenerateReceipt(int saleId)
@@ -231,6 +152,7 @@ namespace BookstorePointOfSale.DataViewModel
 
             return receiptBuilder.ToString();
         }
+
 
         //Report One: getting total sales by date
         public static void GetTotalSalesByDate(DateTime date)
@@ -296,6 +218,86 @@ namespace BookstorePointOfSale.DataViewModel
 }
 
 
+
+
+
+
+////Method to retrieve sale item using ISBN
+//public static SaleItem? GetSaleItemByIsbn(string isbn)
+//{
+//    try
+//    {
+//        SaleItem? saleItem = null;
+
+//        using (MySqlConnection connection = GetConnection())
+//        {
+//            connection.Open();
+
+//            string query = "SELECT s.isbn, s.book_title, s.quantity_sold, s.item_price FROM sale_item s WHERE s.isbn = @isbn;";
+
+//            using (MySqlCommand command = new MySqlCommand(query, connection))
+//            {
+//                command.Parameters.AddWithValue("@isbn", isbn);
+//                using (MySqlDataReader reader = command.ExecuteReader())
+//                {
+//                    if (reader.Read())
+//                    {
+//                        // Create a SaleItem object and populate it with data from the database
+//                        saleItem = new SaleItem(
+//                            reader.GetString(0), // isbn
+//                            reader.GetString(1), // bookTitle
+//                            reader.GetInt32(2), // quantity_sold
+//                            reader.GetDecimal(3) // item_price
+//                        );
+//                    }
+//                }
+//            }
+//        }
+//        return saleItem; // Return the SaleItem object
+//    }
+//    catch (Exception ex)
+//    {
+//        Console.WriteLine($"Error in GetSaleItemByIsbn: {ex.Message}");
+//        return null; // Return null to indicate failure
+//    }
+//}
+
+////Method to retrieve sale item using TITLE
+//public static SaleItem? GetSaleItemByTitle(string bookTitle)
+//{
+//    try
+//    {
+//        SaleItem? saleItem = null;
+//        using (MySqlConnection connection = GetConnection())
+//        {
+//            connection.Open();
+//            string query = "SELECT s.isbn, s.book_title, s.quantity_sold, s.item_price FROM sale_item s WHERE s.book_title LIKE CONCAT('%', @bookTitle, '%');";
+//            using (MySqlCommand command = new MySqlCommand(query, connection))
+//            {
+//                command.Parameters.AddWithValue("@bookTitle", bookTitle);
+//                using (MySqlDataReader reader = command.ExecuteReader())
+//                {
+//                    if (reader.Read())
+//                    {
+//                        // Create a SaleItem object and populate it with data from the database
+//                        saleItem = new SaleItem(
+//                            reader.GetString(0), // isbn
+//                            reader.GetString(1), // bookTitle
+//                            reader.GetInt32(2), // quantity_sold
+//                            reader.GetDecimal(3) // item_price
+//                        );
+//                    }
+//                }
+//            }
+//        }
+//        return saleItem; // Return the SaleItem object
+//    }
+//    catch (Exception ex)
+//    {
+//        Console.WriteLine($"Error in GetSaleItemByTile: {ex.Message}");
+//        return null; // Return null to indicate failure
+//    }
+//}
 
 
 
