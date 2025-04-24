@@ -1,8 +1,9 @@
 ﻿@page "/updateCustomer/{customerId:int}"
 @using BookstorePointOfSale.DataViewModel
 @using BookstorePointOfSale.DataModel
+@using BookstorePointOfSale.Services
 @inject IJSRuntime JS
-@inject NavigationManager Navigation
+@inject NavigationService NavService
 
 <nav class="bg-secondary bg-opacity-10 rounded-3 p-2 mb-3">
     <ol class="breadcrumb mb-0">
@@ -50,7 +51,7 @@ else
                         <input type="tel" class="form-control" @bind="selectedCustomer.PhoneNumber" />
                     </div>
                     <button type="submit" class="btn btn-warning me-2">Save Changes</button>
-                    <button type="button" class="btn btn-danger" @onclick="Cancel">Cancel</button>
+                    <button type="button" class="btn btn-danger" @onclick="NavService.GoToCustomerManagementPage">Cancel</button>
                 </form>
             </div>
 
@@ -79,7 +80,7 @@ else
 
                     <div class="mt-2 mb-2">
                         <button class="btn btn-success mt-6">Start a Sale</button>
-                        <button class="btn btn-secondary mt-6" @onclick="Cancel">Back to Customer Management</button>
+                        <button class="btn btn-secondary mt-6" @onclick="NavService.GoToCustomerManagementPage">Back to Customer Management</button>
                     </div>
                 </div>
             }
@@ -109,7 +110,7 @@ else
         if (selectedCustomer == null) //Check if the customer was found
         {
             JSAlert("Customer not found.");
-            Navigation.NavigateTo("/customerManagement");
+            NavService.GoToCustomerManagementPage();
         }
 
         isLoaded = true; //if the customer was found, set isLoaded to true
@@ -193,13 +194,6 @@ else
 
     }
 
-    /// <summary>
-    /// Navigates back to the customer management page after canceling
-	/// </summary>
-    private void Cancel()
-    {
-        Navigation.NavigateTo("/customerManagement"); 
-    }
 
     /// <summary>
     /// Displays an alert
