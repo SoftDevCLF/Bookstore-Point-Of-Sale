@@ -1,4 +1,4 @@
-﻿@page "/sales/{customerId:int}"
+﻿@page "/sales"
 @using BookstorePointOfSale.DataModel
 @using BookstorePointOfSale.DataViewModel
 @inject NavigationManager Navigation
@@ -21,130 +21,98 @@
 </div>
 
 <h3>Add Book to Sale</h3>
-<div class="mb-3">
-    <button class="btn btn-success mb-3" @onclick="AddInputField">Add Another Book</button>
+<div class="container mt-4">
+    <!-- Input Form for ISBN and Quantity -->
+    <div class="form-group mb-3">
+        <label for="isbnInput">ISBN</label>
+        <input type="text" id="isbnInput" class="form-control" @bind="isbnInput" placeholder="Enter Book ISBN" />
+    </div>
+
+    <div class="form-group mb-3">
+        <label for="quantityInput">Quantity</label>
+        <input type="number" id="quantityInput" class="form-control" @bind="quantityInput" placeholder="Enter Quantity" min="1" />
+    </div>
+
+    <!-- Add Button -->
+    <button class="btn btn-primary" @onclick="AddtoSale">Add to Sale</button>
 </div>
 
-@for (int i = 0; i < isbnInputs.Count; i++)
-{
-    <div class="mb-3">
-        <label>ISBN:</label>
-        <input type="text" class="form-control" @bind="isbnInputs[i]" />
-    </div>
 
-    <div class="mb-3">
-        <label>Quantity:</label>
-        <input type="number" class="form-control" @bind="quantityInputs[i]" />
-    </div>
-}
+<!--Form to Search Inventory and Add Sale-->
 
-<button class="btn btn-primary" @onclick="AddItemToSale">Add to Sale</button>
-
-<hr />
-
-
-@if (saleItems.Count > 0)
-{
-    <h4 class="mt-4">Sale Summary</h4>
-    <table class="table table-striped">
-        <thead class="table-dark">
-            <tr>
-                <th>ISBN</th>
-                <th>Title</th>
-                <th>Unit Price</th>
-                <th>Total</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in saleItems)
-            {
-                var book = inventoryList.FirstOrDefault(b => b.ISBN == item.ISBN);
-
-                if (book != null)
-                {
-                    <tr>
-                        <td>@book.ISBN</td>
-                        <td>@book.Title</td>
-                        <td>@book.Price.ToString("C")</td>
-                        <td>@(book.Price * item.QuantitySold).ToString("C")</td>
-                    </tr>
-                }
-            }
-        </tbody>
-    </table>
 }
 
 @code {
-    //Parameter to hold the customer ID
-    [Parameter]
-    public int customerId { get; set; }
-
-    private List<Inventory> inventoryList = new List<Inventory>();
     private List<SaleItem> saleItems = new List<SaleItem>();
-    private List<string> isbnInputs = new List<string>();
-    private List<int> quantityInputs = new List<int>();
+    private string searchTitle = "";
+    private string isbnInput = "";
+    private int quantityInput = 1; // Default quantity
+    private double totalAmount = 0;
 
-    private int selectedCustomerId;
-    private bool isLoaded = false;
+    string searchBy = "isbn";
+    string searchInput;
+    Inventory foundBook = null;
+    List<Inventory> foundBooks = new();
+    bool searched = false;
 
 
-    //Fetching Inventory
+    // Load inventory
     protected override async Task OnInitializedAsync()
     {
-        inventoryList = await Task.Run(() => InventoryDatabase.GetAllBooks());
-        isLoaded = true;
+        // Example: Get all books from the database
+        foundBooks = await Task.Run(() => InventoryDatabase.GetAllBooks()); // Assuming you have a method like this
     }
 
-    //Input fields for ISBN and Quantity
-    private void AddInputField()
+    //Add books to the Sale
+    private async Task AddtoSale()
     {
-        isbnInputs.Add(string.Empty);
-        quantityInputs.Add(1); // Default quantity
-    }
+        foundBook = null;
+        foundBooks.Clear();
+        searched = false;
 
-    //Add Item to Sale
-    private async Task AddItemToSale()
-    {
-        for (int i = 0; i < isbnInputs.Count; i++)
+        // Validate inputs
+        if (string.IsNullOrWhiteSpace(searchInput) || quantityInput <= 0)
         {
-            var isbn = isbnInputs[i];
-            var quantity = quantityInputs[i];
-            if (string.IsNullOrEmpty(isbn) || quantity <= 0)
-            {
-                await JS.InvokeVoidAsync("alert", "Please enter valid ISBN and quantity.");
-                return;
-            }
-
-            //Try to find the book in inventory
-
-            Inventory foundBook = InventoryDatabase.SearchByISBN(isbn);
-
-            //Check if the book is found
-            if (foundBook == null)
-            {
-                await JS.InvokeVoidAsync("alert", "Book not found.");
-                return;
-            }
-
-            //Create Sale Item with what is needed
-            SaleItem saleItem = new SaleItem(0, foundBook.ISBN, quantity); //Zero since the saleId is AutoIncremented in the database
-            saleItems.Add(saleItem);
-
-            //Call the method to add the sale item to the database
-            SaleItem savedSaleItem = SalesDatabase.AddSaleItem(saleItem);
-
-
-            //Update Saleitems list with database saleId
-            saleItem.SaleId = savedSaleItem.SaleId;
+            await JS.InvokeVoidAsync("alert", "Please enter a valid ISBN and quantity.");
+            return;
         }
-    }
+        if (searchBy == "isbn")
+        {
+            // Check if the book exists in the inventory
+            foundBook = InventoryDatabase.SearchByISBN(isbnInput);
+        }
+        else if (searchBy == "title")
+        {
+            // Check if the book exists in the inventory
+            foundBooks = InventoryDatabase.SearchByTitle(searchInput);
+        }
 
-    //JS Async Alert Method
-    private async Task JSAlert(string message)
-    {
-        await JS.InvokeVoidAsync("alert", message);
-    }
+        searched = true;
+		searchInput = ""; // Clear the search input after searching
 
+        //If book is found add item to sale
+		if (foundBook != null)
+		{
+			// Book is found in the inventory
+			var book = foundBooks.FirstOrDefault(b => b.ISBN == isbnInput);
+
+            //Add the sale item to the list since book is found
+			var saleItem = new SaleItem(0, book.ISBN, quantityInput); // SaleId is generated in the DB
+
+			// Add the sale item to the list
+			SalesDatabase.AddSaleItem(saleItem);
+
+			// Update inventory after sale
+			book.Quantity -= quantityInput; // Decrease stock in inventory
+			totalAmount += book.Price * quantityInput; // Update total sale amount
+			saleItems.Add(saleItem); // Add the sale item to the list
+
+            // Clear input fields after adding the item to the sale
+            isbnInput = "";
+            quantityInput = 1;
+
+		}
+    }
 
 }
 
