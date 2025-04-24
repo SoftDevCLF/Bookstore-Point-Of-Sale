@@ -21,6 +21,10 @@ namespace BookstorePointOfSale.DataModel
         /// </summary>
         public string ISBN { get; set; }
 
+        ///<summary>
+        ///Represents a Title of the sold item
+        ///</summary>
+        public string BookTitle { get; set; }
         /// <summary>
         /// Property for the quantity of the item sold
         /// </summary>
@@ -42,12 +46,14 @@ namespace BookstorePointOfSale.DataModel
         /// <param name="isbn">ISBN of the book</param>
         /// <param name="quantitySold">Quantity of the book sold</param>
         /// <param name="price">Unit price of the book</param>
-        public SaleItem(string isbn, int quantitySold, decimal itemPrice)
+        public SaleItem(string isbn, string bookTitle, int quantitySold, decimal itemPrice)
         {
             ISBN = isbn;
+            BookTitle = bookTitle;
             QuantitySold = quantitySold;
             ItemPrice = itemPrice;
             Books = new List<Book>();
+            
         }
     }
 }

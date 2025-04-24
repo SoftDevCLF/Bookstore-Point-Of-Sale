@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Library_Manager.Data;
 using MySqlConnector;
 using BookstorePointOfSale.DataModel;
 using Microsoft.Maui.Controls;
+using System.Data;
 
 
 namespace BookstorePointOfSale.DataViewModel
@@ -47,11 +47,11 @@ namespace BookstorePointOfSale.DataViewModel
         }
 
         //Method to add sale item
-        public static bool AddSaleItem(int saleId, string isbn, int quantitySold, decimal itemPrice)
+        public static bool AddSaleItem(int saleId, string isbn, string bookTitle, int quantitySold, decimal itemPrice)
         {
             try
             {
-                string query = "INSERT INTO sale_item (sale_id, isbn, quantity_sold, item_price) VALUES (@saleId, @isbn, @quantitySold, @itemPrice);";
+                string query = "INSERT INTO sale_item (sale_id, isbn, book_title, quantity_sold, item_price) VALUES (@saleId, @isbn, @bookTitle, @quantitySold, @itemPrice);";
                 using (var connection = GetConnection())
                 {
                     connection.Open();
@@ -59,6 +59,7 @@ namespace BookstorePointOfSale.DataViewModel
                     {
                         command.Parameters.AddWithValue("@saleId", saleId);
                         command.Parameters.AddWithValue("@isbn", isbn);
+                        command.Parameters.AddWithValue("@bookTitle", bookTitle);
                         command.Parameters.AddWithValue("@quantitySold", quantitySold);
                         command.Parameters.AddWithValue("@itemPrice", itemPrice);
 
@@ -86,7 +87,7 @@ namespace BookstorePointOfSale.DataViewModel
                 {
                     connection.Open();
 
-                    string query = "SELECT s.isbn, s.quantity_sold, s.item_price FROM sale_item s WHERE s.isbn = @isbn;";
+                    string query = "SELECT s.isbn, s.book_title, s.quantity_sold, s.item_price FROM sale_item s WHERE s.isbn = @isbn;";
 
                     using (MySqlCommand command = new MySqlCommand(query, connection))
                     {
@@ -98,8 +99,9 @@ namespace BookstorePointOfSale.DataViewModel
                                 // Create a SaleItem object and populate it with data from the database
                                 saleItem = new SaleItem(
                                     reader.GetString(0), // isbn
-                                    reader.GetInt32(1), // quantity_sold
-                                    reader.GetDecimal(2) // item_price
+                                    reader.GetString(1), // bookTitle
+                                    reader.GetInt32(2), // quantity_sold
+                                    reader.GetDecimal(3) // item_price
                                 );
                             }
                         }
@@ -110,6 +112,43 @@ namespace BookstorePointOfSale.DataViewModel
             catch (Exception ex)
             {
                 Console.WriteLine($"Error in GetSaleItemByIsbn: {ex.Message}");
+                return null; // Return null to indicate failure
+            }
+        }
+
+        //Method to retrieve sale item using TITLE
+        public static SaleItem? GetSaleItemByTitle(string bookTitle)
+        {
+            try
+            {
+                SaleItem? saleItem = null;
+                using (MySqlConnection connection = GetConnection())
+                {
+                    connection.Open();
+                    string query = "SELECT s.isbn, s.book_title, s.quantity_sold, s.item_price FROM sale_item s WHERE s.book_title LIKE CONCAT('%', @bookTitle, '%');";
+                    using (MySqlCommand command = new MySqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@bookTitle", bookTitle);
+                        using (MySqlDataReader reader = command.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                // Create a SaleItem object and populate it with data from the database
+                                saleItem = new SaleItem(
+                                    reader.GetString(0), // isbn
+                                    reader.GetString(1), // bookTitle
+                                    reader.GetInt32(2), // quantity_sold
+                                    reader.GetDecimal(3) // item_price
+                                );
+                            }
+                        }
+                    }
+                }
+                return saleItem; // Return the SaleItem object
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetSaleItemByTile: {ex.Message}");
                 return null; // Return null to indicate failure
             }
         }
@@ -189,7 +228,7 @@ namespace BookstorePointOfSale.DataViewModel
             try
             {
                 string query = @"SELECT s.sale_id, s.sale_date, c.first_name, c.last_name, 
-                                i.isbn, i.quantity_sold, i.item_price 
+                                i.isbn, i.book_title, i.quantity_sold, i.item_price 
                          FROM sales s
                          JOIN customer c ON s.customer_id = c.customer_id
                          JOIN sale_item i ON s.sale_id = i.sale_id
@@ -214,6 +253,7 @@ namespace BookstorePointOfSale.DataViewModel
                                     receiptBuilder.AppendLine($"Sale Date    : {Convert.ToDateTime(reader["sale_date"]).ToString("yyyy-MM-dd")}");
                                     receiptBuilder.AppendLine(new string('-', 40));
                                     receiptBuilder.AppendLine($"ISBN         : {reader["isbn"]}");
+                                    receiptBuilder.AppendLine($"Book Title   : {reader["book_title"]}");
                                     receiptBuilder.AppendLine($"Qty Sold     : {reader["quantity_sold"]}");
                                     receiptBuilder.AppendLine($"Item Price   : {Convert.ToDecimal(reader["item_price"]).ToString("C")}");
                                     receiptBuilder.AppendLine(new string('-', 40));
