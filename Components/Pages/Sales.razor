@@ -30,6 +30,13 @@
         <p class="alert alert-info">@statusMessage</p>
     }
 
+	@if (saleId > 0)
+	{
+        <div class="alert alert-info">
+            Active Sale ID: @saleId | Customer: @customerId
+        </div>
+	}
+
     <h3>Add Items to Sale</h3>
     <!-- ISBN Input -->
     <div class="mb-3">
@@ -50,7 +57,6 @@
             <thead>
                 <tr>
                     <th>ISBN</th>
-                    <th>Book Title</th>
                     <th>Quantity</th>
                     <th>Unit Price</th>
                     <th>Total</th>
@@ -61,31 +67,47 @@
                 {
                     <tr>
                         <td>@item.ISBN</td>
-						@* <td>@item.Title</td> *@
                         <td>@item.QuantitySold</td>
-                        <td>$@item.ItemPrice</td>
-                        <td>@(item.QuantitySold * item.ItemPrice)</td>
+                        <td>@item.ItemPrice.ToString("C")</td>
+                        <td>@((item.QuantitySold * item.ItemPrice).ToString("C"))</td>
                     </tr>
                 }
             </tbody>
+            <tfoot>
+                <tr class="table-active">
+                    <td colspan="4" class="text-end fw-bold">Grand Total:</td>
+                    <td class="fw-bold">@saleItems.Sum(i => i.QuantitySold * i.ItemPrice).ToString("C")</td>
+                </tr>
+            </tfoot>
         </table>
-        <button class="btn btn-warning me-2" @onclick="ConfirmSale">Confirm Sale</button>
-        <button class="btn btn-danger" @onclick="CancelSale">Cancel Sale</button>
 
-        <br/>
+        <div class="d-flex gap-2 mb-3">
+            <button class="btn btn-warning" @onclick="ConfirmSale">Confirm Sale</button>
+            <button class="btn btn-danger" @onclick="CancelSale">Cancel Sale</button>
+        </div>
+    }
+    <h3>Receipt</h3>
+    <button class="btn btn-primary mb-2" @onclick="GenerateReceipt">Generate Receipt</button>
 
-        <!-- Generate Receipt Button -->
-        <h3>Receipt</h3>
-        <button class="btn btn-warning me-2" @onclick="GenerateReceipt">Click here to view your receipt</button>
-
-        @if (!string.IsNullOrEmpty(receipt))
-        {
-            <h3>Receipt</h3>
-            <pre class="border rounded bg-light p-3">@receipt</pre>
-        }
+    @if (!string.IsNullOrWhiteSpace(receipt))
+    {
+        <div class="border rounded bg-white p-3 mt-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5>Receipt Preview</h5>
+                <button class="btn btn-sm btn-outline-secondary" @onclick="GenerateReceipt">
+                    <i class="bi bi-printer"></i> Print
+                </button>
+            </div>
+            <div class="receipt-content font-monospace bg-light p-3">
+                <pre>@receipt</pre>
+            </div>
+        </div>
+    }
+    else
+    {
+        <p class="text-muted">No receipt generated yet.</p>
     }
 </div>
-}
 
 
 @code {
@@ -97,7 +119,6 @@
     private string receipt;
     private int saleId; // Current Sale ID
     private List<SaleItem> saleItems = new(); // Holds Sale Items
-    private List <Book> books = new(); // Holds Customer Details
 
     //Begin the sale process
     private async Task CreateSaleSession()
@@ -229,8 +250,6 @@
 		await JS.InvokeVoidAsync("alert", "Receipt generated successfully.");
 		StateHasChanged(); // Refresh the UI to show the receipt
     }
-
-
 }
 
 
