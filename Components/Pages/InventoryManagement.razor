@@ -1,0 +1,162 @@
+﻿@page "/inventoryManagement"
+@using BookstorePointOfSale.DataModel
+@using BookstorePointOfSale.DataViewModel
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+
+<nav aria-label="breadcrumb" class="bg-secondary bg-opacity-10 rounded-3">
+    <ol class="breadcrumb align-content-center ps-3 pt-1 pb-1">
+        <li class="breadcrumb-item"><a href="/">Home</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Inventory</li>
+    </ol> 
+</nav>
+
+<hr/>
+
+<h1>Inventory Management</h1>
+
+<hr/>
+
+<p class="ms-2 text-muted">Welcome to the Inventory Management Page</p>
+
+<div class="container">
+    <div class="row">
+        <div class="col-7">
+            <h4>Search for a Book</h4>
+            <form @onsubmit="SearchInventory">
+                <div class="input-group mb-3">
+                    <input class="border rounded-1 w-50 ps-3" placeholder="Enter ISBN" @bind="isbn"/>
+                    <button class="btn btn-primary" type="submit">Search</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="col-5">
+            <div class="d-flex justify-content-between align-items-start gap-4">
+                <div>
+                    <h4>Add New Inventory</h4>
+                    <button @onclick="GoToAddNewBookPage" type="button" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-2"></i> Add New Book
+                    </button>
+                </div>
+
+                <div>
+                    <h4>View All Inventory</h4>
+                    <button @onclick="GoToViewInventoryPage" type="button" class="btn btn-secondary">
+                        <i class="bi bi-book me-2"></i> View All Inventory
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<hr/>
+
+<div class="col-md-12 border-start border-end border-top align-middle">
+    <p class="mt-3 ms-3">Search Results</p>
+    <table class="table">
+        <thead>
+            <tr>
+                <th class="text-primary border-secondary">ISBN</th>
+                <th class="text-primary border-secondary">Title</th>
+                <th class="text-primary border-secondary">Author</th>
+                <th class="text-primary border-secondary">Genre</th>
+                <th class="text-primary border-secondary">Price</th>
+                <th class="text-primary border-secondary">Quantity</th>
+                <th class="text-primary border-secondary">Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @if (foundBook != null)
+            {
+                <tr>
+                    <td>@foundBook.ISBN</td>
+                    <td>@foundBook.Title</td>
+                    <td>@foundBook.Author</td>
+                    <td>@foundBook.Genre</td>
+                    <td>@foundBook.Price.ToString("C")</td>
+                    <td>@foundBook.Quantity</td>
+                    <td class="text-center">
+                        <button class="btn btn-primary" @onclick="() => EditBook(foundBook.ISBN)">Edit</button>
+                        <button class="btn btn-danger" @onclick="() => ConfirmDelete(foundBook.ISBN)">Delete</button>
+                    </td>
+                </tr>
+            }
+            else if (searched)
+            {
+                <tr>
+                    <td colspan="7" class="text-center text-muted">No results found.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    string isbn;
+    Inventory foundBook = null;
+    bool searched = false;
+
+    private async Task SearchInventory()
+    {
+        if (string.IsNullOrWhiteSpace(isbn))
+        {
+            await JSAlert("Please enter an ISBN.");
+            return;
+        }
+
+        foundBook = InventoryDatabase.SearchByISBN(isbn);
+        searched = true;
+
+        if (foundBook == null)
+        {
+            await JSAlert("Book not found.");
+        }
+
+        isbn = "";
+    }
+
+    private async Task ConfirmDelete(string isbn)
+    {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to delete book {isbn}?");
+        if (confirmed)
+        {
+            bool success = await Task.Run(() => InventoryDatabase.DeleteBook(isbn));
+            if (success)
+            {
+                await JSAlert("Book deleted successfully.");
+                foundBook = null;
+                searched = false;
+            }
+            else
+            {
+                await JSAlert("Failed to delete the book.");
+            }
+        }
+    }
+
+
+    private void GoToAddNewBookPage()
+    {
+        Navigation.NavigateTo("/addNewBook");
+    }
+
+    private void EditBook(string isbn)
+    {
+        Navigation.NavigateTo($"/editBook/{isbn}");
+    }
+
+    private void GoToViewInventoryPage()
+    {
+        Navigation.NavigateTo("/viewInventory");    
+    }
+
+    private async Task JSAlert(string message)
+    {
+        await JS.InvokeVoidAsync("alert", message);
+    }
+
+}
