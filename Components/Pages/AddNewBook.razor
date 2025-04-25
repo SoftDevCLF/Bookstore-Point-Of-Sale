@@ -1,104 +1,144 @@
 ﻿@page "/addNewBook"
 @using BookstorePointOfSale.DataModel
 @using BookstorePointOfSale.DataViewModel
-@inject NavigationManager Navigation
-@inject IJSRuntime JS
+@using BookstorePointOfSale.Services
+@using BookstorePointOfSale.Exceptions
+@inject NavigationService navigationService
+@inject AlertService alertService
+@inject ValidationService validationService
 
+<!-- Breadcrumb Navigation -->
 <nav aria-label="breadcrumb" class="bg-secondary bg-opacity-10 rounded-3">
 	<ol class="breadcrumb align-content-center ps-3 pt-1 pb-1">
 		<li class="breadcrumb-item"><a href="/">Home</a></li>
 		<li class="breadcrumb-item"><a href="/inventoryManagement">Inventory Management</a></li>
 		<li class="breadcrumb-item active" aria-current="page">Add New Book</li>
-	</ol>
+		</ol>
 </nav>
 
-<hr/>
+<hr />
 
+<!-- Page Header -->
 <h1>Add New Book to Inventory</h1>
+<hr />
 
-<hr/>
-
+<!-- Form Section -->
 <div class="container">
 	<div class="row">
 		<div class="col-6">
+			<!-- Label showing required fields -->
 			<div class="fw-lighter mb-2">
 				<i class="text-danger">*</i> <i>Required</i>
 			</div>
 
+			<!-- Form for inputting new book details -->
 			<form @onsubmit="@(async e => await AddInventoryToDatabase())">
+
+				<!-- ISBN input -->
 				<div class="mb-3">
 					<label class="form-label">ISBN<i class="text-danger">*</i></label>
-					<input @bind="isbn" class="form-control"/>
+					<input @bind="isbn" class="form-control" />
 				</div>
 
+				<!-- Title input -->
 				<div class="mb-3">
 					<label class="form-label">Title<i class="text-danger">*</i></label>
-					<input @bind="title" class="form-control"/>
+					<input @bind="title" class="form-control" />
 				</div>
 
+				<!-- Author input -->
 				<div class="mb-3">
 					<label class="form-label">Author<i class="text-danger">*</i></label>
-					<input @bind="author" class="form-control"/>
+					<input @bind="author" class="form-control" />
 				</div>
 
+				<!-- Edition input -->
 				<div class="mb-3">
 					<label class="form-label">Edition<i class="text-danger">*</i></label>
-					<input type="number" @bind="edition" class="form-control"/>
+					<input type="number" @bind="edition" class="form-control" />
 				</div>
 
+				<!-- Editorial input -->
 				<div class="mb-3">
 					<label class="form-label">Editorial<i class="text-danger">*</i></label>
-					<input @bind="editorial" class="form-control"/>
+					<input @bind="editorial" class="form-control" />
 				</div>
 
+				<!-- Year input -->
 				<div class="mb-3">
 					<label class="form-label">Year<i class="text-danger">*</i></label>
-					<input @bind="year" class="form-control"/>
+					<input @bind="year" class="form-control" />
 				</div>
 
+				<!-- Genre input -->
 				<div class="mb-3">
 					<label class="form-label">Genre<i class="text-danger">*</i></label>
-					<input @bind="genre" class="form-control"/>
+					<input @bind="genre" class="form-control" />
 				</div>
 
+				<!-- Optional comments input -->
 				<div class="mb-3">
 					<label class="form-label">Comments</label>
 					<textarea class="form-control" @bind="comments"></textarea>
 				</div>
 
+				<!-- Price input -->
 				<div class="mb-3">
 					<label class="form-label">Price<i class="text-danger">*</i></label>
 					<input type="number" step="0.01" @bind="price" class="form-control" />
 				</div>
 
+				<!-- Quantity input -->
 				<div class="mb-3">
 					<label class="form-label">Quantity<i class="text-danger">*</i></label>
 					<input type="number" @bind="quantity" class="form-control" />
 				</div>
 
-				<div>
-					<button class="btn btn-primary mb-3 me-3" type="submit">Add Book</button>
+				<!-- Submit button -->
+				<div class="d-flex gap-2">
+					<button class="btn btn-primary mb-3" type="submit">
+						@if (newInventoryAdded)
+						{
+								<span>Add Another Book</span>
+						}
+						else
+						{
+								<span>Add Book</span>
+						}
+					</button>
+
+					@if (newInventoryAdded)
+					{
+							<!-- Back to Inventory Button -->
+							<button type="button" class="btn btn-secondary mb-3" @onclick="navigationService.GoToInventoryManagementPage">
+								Back to Inventory
+							</button>
+					}
 				</div>
 			</form>
 		</div>
 
+		<!-- Confirmation panel showing the newly added book -->
 		<div class="col-6 img-thumbnail">
 			@if (newInventoryAdded)
 			{
-				<h4>New Book Overview</h4>
-				<div class="bg-secondary bg-gradient bg-opacity-10 rounded-3 p-3">
-					<div><img src="bookshop.jpg" alt="Books" class="img-fluid rounded-3"/></div>
-					<div class="fw-bold p-3">@title</div>
+					<h4>New Book Overview</h4>
+					<div class="bg-secondary bg-gradient bg-opacity-10 rounded-3 p-3">
 
-					<div class="p-3"><div class="text-muted">Author</div>@author</div>
-					<div class="p-3"><div class="text-muted">Edition</div>@edition</div>
-					<div class="p-3"><div class="text-muted">Editorial</div>@editorial</div>
-					<div class="p-3"><div class="text-muted">Year</div>@year</div>
-					<div class="p-3"><div class="text-muted">Genre</div>@genre</div>
-					<div class="p-3"><div class="text-muted">Genre</div>@comments</div>
-					<div class="p-3"><div class="text-muted">Price</div>@price.ToString("C")</div>
-					<div class="p-3"><div class="text-muted">Quantity</div>@quantity</div>
-				</div>
+						<!-- Book image -->
+						<div><img src="bookshop.jpg" alt="Books" class="img-fluid rounded-3" /></div>
+
+						<!-- Book details summary -->
+						<div class="fw-bold p-3">@title</div>
+						<div class="p-3"><div class="text-muted">Author</div>@author</div>
+						<div class="p-3"><div class="text-muted">Edition</div>@edition</div>
+						<div class="p-3"><div class="text-muted">Editorial</div>@editorial</div>
+						<div class="p-3"><div class="text-muted">Year</div>@year</div>
+						<div class="p-3"><div class="text-muted">Genre</div>@genre</div>
+						<div class="p-3"><div class="text-muted">Comments</div>@comments</div>
+						<div class="p-3"><div class="text-muted">Price</div>@price.ToString("C")</div>
+						<div class="p-3"><div class="text-muted">Quantity</div>@quantity</div>
+					</div>
 			}
 		</div>
 	</div>
@@ -117,41 +157,58 @@
 	private int quantity;
 	private bool newInventoryAdded = false;
 
+	/// <summary>
+	/// Adds a new book to the database after validations.
+	/// </summary>
 	public async Task AddInventoryToDatabase()
 	{
-		if (!await ValidateInputs())
+		// If already added, clicking again means "Add Another Book" behavior
+		if (newInventoryAdded)
+		{
+			ClearInputs();
+			newInventoryAdded = false;
+			return;
+		}
+
+		// Validate ISBN
+		if (!await validationService.ValidateIsbn(isbn))
+			return;
+
+		// Validate year format
+		if (!await validationService.ValidateYear(year))
+			return;
+
+		// Validate other book fields
+		if (!await validationService.ValidateBookInputs(isbn, title, author, edition, editorial, year, genre, price, quantity))
 			return;
 
 		Inventory newBook = new Inventory(isbn, title, author, edition, editorial, year, genre, comments, quantity, price);
-		await Task.Run(() => InventoryDatabase.AddBook(newBook));
-		newInventoryAdded = true;
+
+		try
+		{
+			await Task.Run(() => InventoryDatabase.AddBook(newBook));
+			newInventoryAdded = true; // Now switch UI to confirmation mode
+		}
+		catch (DuplicateISBNException ex)
+		{
+			await alertService.JSAlert(ex.Message);
+		}
 	}
 
-	private async Task<bool> ValidateInputs()
+	/// <summary>
+	/// Clears all form fields for adding a new book.
+	/// </summary>
+	private void ClearInputs()
 	{
-		if (string.IsNullOrWhiteSpace(isbn))
-		{
-			await JSAlert("ISBN is required.");
-			return false;
-		}	
-
-		if (quantity < 0) 
-		{
-			await JSAlert("Quantity cannot be negative.");
-			return false;
-		}
-
-		if (price < 0) 
-		{
-			await JSAlert("Price cannot be negative.");
-			return false;
-		}
-
-		return true;
-	}
-
-	private async Task JSAlert(string message)
-	{
-		await JS.InvokeVoidAsync("alert", message);	
+		isbn = string.Empty;
+		title = string.Empty;
+		author = string.Empty;
+		edition = 0;
+		editorial = string.Empty;
+		year = string.Empty;
+		genre = string.Empty;
+		comments = string.Empty;
+		price = 0;
+		quantity = 0;
 	}
 }

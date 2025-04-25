@@ -1,18 +1,84 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ClassDiagram MajorVersion="1" MinorVersion="1">
-  <Class Name="Library_Manager.Data.Database" Collapsed="true">
-    <Position X="4.5" Y="0.75" Width="1.5" />
+  <Class Name="BookstorePointOfSale.DataModel.Book">
+    <Position X="8.75" Y="2" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
-      <FileName>Data\Database.cs</FileName>
+      <HashCode>AAAAAAAABQAAEEAAgAIAAAAAAAAAAAAAAAAAQAAAIAE=</HashCode>
+      <FileName>DataModel\Book.cs</FileName>
     </TypeIdentifier>
   </Class>
-  <Class Name="BookstorePointOfSale.Data_ViewModel.SalesBroker" Collapsed="true">
-    <Position X="1.5" Y="2.75" Width="1.5" />
+  <Class Name="BookstorePointOfSale.DataModel.Customer">
+    <Position X="6.75" Y="3" Width="1.5" />
     <TypeIdentifier>
-      <HashCode>AAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
-      <FileName>Data ViewModel\SalesBroker.cs</FileName>
+      <HashCode>AAAAAAAAAAAAAAAAAAAABAAAAAAAABAAAAAAAAAAAAA=</HashCode>
+      <FileName>DataModel\Customer.cs</FileName>
     </TypeIdentifier>
+  </Class>
+  <Class Name="BookstorePointOfSale.DataModel.Inventory">
+    <Position X="10.5" Y="3.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAgAAAAAA=</HashCode>
+      <FileName>DataModel\Inventory.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="BookstorePointOfSale.DataModel.Person">
+    <Position X="6.75" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAEAAACAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAg=</HashCode>
+      <FileName>DataModel\Person.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="BookstorePointOfSale.DataModel.Sales">
+    <Position X="10.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAQAAAAAAAAAAAAAAAAABAAAAAAAAEAkAA=</HashCode>
+      <FileName>DataModel\Sales.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="BookstorePointOfSale.DataViewModel.CustomerDatabase">
+    <Position X="2.25" Y="2.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAQAAAAAABAAAAAAAACAAAAAAAAAEAAAgAAA=</HashCode>
+      <FileName>DataViewModel\CustomerDatabase.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="BookstorePointOfSale.DataViewModel.Database">
+    <Position X="0.5" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAABAAAAA=</HashCode>
+      <FileName>DataViewModel\Database.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="BookstorePointOfSale.DataViewModel.InventoryDatabase">
+    <Position X="0.5" Y="2.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>BBAAAEAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>DataViewModel\InventoryDatabase.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="BookstorePointOfSale.Services.AlertService">
+    <Position X="4.25" Y="0.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAABAAAAAEAAAAAAAAgAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>Services\AlertService.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="BookstorePointOfSale.Services.NavigationService">
+    <Position X="12.75" Y="3.25" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAEAAAAAAAAAAAAAAAAAAAgAAAAAAAAACAAAAAAAAAI=</HashCode>
+      <FileName>Services\NavigationService.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
+  </Class>
+  <Class Name="BookstorePointOfSale.Services.ValidationService">
+    <Position X="4.25" Y="2.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>QAAAAAAAAAAAAAAAAAAAgAAAAAAAAgAAAAAAAAAAAAA=</HashCode>
+      <FileName>Services\ValidationService.cs</FileName>
+    </TypeIdentifier>
+    <Lollipop Position="0.2" />
   </Class>
   <Font Name="Segoe UI" Size="9" />
 </ClassDiagram>

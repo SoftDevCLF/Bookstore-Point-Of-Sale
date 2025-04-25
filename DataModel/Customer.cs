@@ -10,32 +10,12 @@ namespace BookstorePointOfSale.DataModel
     /// <summary>
     /// Represents a Customer
     /// </summary>
-    public class Customer
+    public class Customer: Person
     {
         /// <summary>
         /// Property for customer id
         /// </summary>
-        public int CustomerId { get; set; } 
-
-        /// <summary>
-        /// Property for customer first name
-        /// </summary>
-        public string FirstName { get; set; }
-
-        /// <summary>
-        /// Property for customer last name
-        /// </summary>
-        public string LastName { get; set; }
-
-        /// <summary>
-        /// Property for customer email
-        /// </summary>
-        public string Email { get; set; }
-
-        /// <summary>
-        /// Property for customer phone number
-        /// </summary>
-        public string PhoneNumber { get; set; }
+        public int CustomerId { get; set; }
 
         /// <summary>
         /// Provides immutable list of sales
@@ -45,7 +25,8 @@ namespace BookstorePointOfSale.DataModel
         /// <summary>
         /// Default constructor
         /// </summary>
-        public Customer() { }
+        public Customer(): base()
+        { }
 
         /// <summary>
         /// Constructs Customer object
@@ -55,7 +36,7 @@ namespace BookstorePointOfSale.DataModel
         /// <param name="lastName">Customer last name</param>
         /// <param name="email">Customer email</param>
         /// <param name="phoneNumber">Customer phone number</param>
-        public Customer(int customerId, string firstName, string lastName, string email, string phoneNumber)
+        public Customer(int customerId, string firstName, string lastName, string email, string phoneNumber): base(firstName, lastName, email, phoneNumber)
         {
             CustomerId = customerId;
             FirstName = firstName;
@@ -71,7 +52,7 @@ namespace BookstorePointOfSale.DataModel
         /// <param name="lastName">Customer last name</param>
         /// <param name="email">Customer email</param>
         /// <param name="phoneNumber">Customer phone number</param>
-        public Customer(string firstName, string lastName, string email, string phoneNumber)
+        public Customer(string firstName, string lastName, string email, string phoneNumber): base(firstName, lastName, email, phoneNumber)
         {
             FirstName = firstName;
             LastName = lastName;
