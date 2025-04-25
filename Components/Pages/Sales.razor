@@ -114,8 +114,6 @@
 </div>
 
 
-
-
 @code {
     //List to store sale items for transaction
     private List<SaleItem> saleItems = new List<SaleItem>();
@@ -349,19 +347,6 @@
 		//Refresh the UI
         StateHasChanged();
     }
-
-    // Clear Receipt Button
-    // private async Task ClearReceipt()
-    // {
-    //     Reset receipt text, sale items, and total amount
-    //     receiptText = string.Empty;
-    //     saleItems.Clear();
-    //     totalAmount = 0;
-    //     quantityInput = 1; Reset quantity input
-
-    //     Refresh the UI
-    //     StateHasChanged();
-    // }
 
     // JS Async Alert Method
     private async Task JSAlert(string message)
