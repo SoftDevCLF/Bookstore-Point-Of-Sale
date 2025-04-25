@@ -90,13 +90,13 @@
                         <!-- Save Changes Button -->
                         <button class="btn btn-success" type="submit">Save Changes</button>
 
-                            @if (updateSuccessful)
-                            {
-                                <!-- Back to Inventory Button (only shows after successful update) -->
-                                <button type="button" class="btn btn-secondary" @onclick="NavService.GoToInventoryManagementPage">
-                                    Back to Inventory Management
-                                </button>
-                            }
+                        @if (updateSuccessful)
+                        {
+                            <!-- Back to Inventory Button (only shows after successful update) -->
+                            <button type="button" class="btn btn-secondary" @onclick="NavService.GoToInventoryManagementPage">
+                                Back to Inventory Management
+                            </button>
+                        }
                     </div>
 
                 </form>
@@ -175,12 +175,15 @@ else
 
         // Validate the Year format first (must be 4-digit number)
         if (!await validationService.ValidateYear(inventory.Year))
-        return;
+            return;
 
 
         // Perform validation; exit early if invalid
         if (!await ValidateInventoryInputs())
             return;
+
+        // Ask the user to confirm before saving changes
+        bool confirmed = await alertService.ConfirmAlert($"Are you sure you want to update this book with ISBN {inventory.ISBN}");
 
         // Attempt to update the inventory in the database
         int rowsAffected = await Task.Run(() => InventoryDatabase.UpdateBook(inventory));
@@ -239,16 +242,16 @@ else
         }
 
         // Price must not be negative
-        if (inventory.Price < 0)
+        if (inventory.Price <= 0)
         {
-            await alertService.JSAlert("Price cannot be negative.");
+            await alertService.JSAlert("Price must be more than $0");
             return false;
         }
 
         // Quantity must not be negative
-        if (inventory.Quantity < 0)
+        if (inventory.Quantity <= 0)
         {
-            await alertService.JSAlert("Quantity cannot be negative.");
+            await alertService.JSAlert("Quantity must be more than 0.");
             return false;
         }
 
