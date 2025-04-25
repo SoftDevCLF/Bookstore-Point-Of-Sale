@@ -12,14 +12,14 @@
 <button class="btn btn-primary" @onclick="GetSalesByDate">Get Total Sales</button>
 @if (totalSalesByDate != null)
 {
-		<p>Total Sales on @reportDate.ToString("yyyy-MM-dd"): $@totalSalesByDate.ToString("C")</p>
+		<p>Total Sales on @reportDate.ToString("yyyy-MM-dd"): $@totalSalesByDate</p>
 }
 
 <h5>View Total Sales Per Customer</h5>
 <button class="btn btn-primary" @onclick="GetSalesByCustomer">Get Total Sales</button>
 @if (totalSalesByCustomer != null)
 {
-	<p>Total Sales for Customer ID @customerId: $@totalSalesByCustomer.ToString("C")</p>
+	<p>Total Sales for Customer ID @customerId: $@totalSalesByCustomer</p>
 }
 
 
@@ -36,27 +36,28 @@
 @code {
 	private DateTime reportDate = DateTime.Today;
 	private DateTime startDate = DateTime.Now.AddDays(-7); //Default 7 days ago
-	private DateTimeendDate = DateTime.Now; //Default today
+	private DateTime endDate = DateTime.Now; //Default today
 	private double? totalSalesByDate;
 	private double? totalSalesByCustomer;
 	private double? totalSalesByDatePeriod;
+	private int customerId;
 
 	//Call GetSalesByDate method
 	private async Task GetSalesByDate()
 	{
-		totalSalesByDate = await SalesService.GetTotalSalesByDate(reportDate);
+		totalSalesByDate = SalesDatabase.GetTotalSalesByDate(reportDate);
 	}
 
 	//Call GetSalesByCustomer method
 	private async Task GetSalesByCustomer()
 	{
-		totalSalesByCustomer = await SalesService.GetTotalSalesByCustomer(customerId);
+		totalSalesByCustomer = SalesDatabase.GetTotalSalesByCustomer(customerId);
 	}
 
 	//Call GetSalesByDatePeriod method
 	private async Task GetSalesByDatePeriod()
 	{
-		totalSalesByDatePeriod = await SalesService.GetTotalSalesByDatePeriod(startDate, endDate);
+		totalSalesByDatePeriod = SalesDatabase.GetTotalSalesByDatePeriod(startDate, endDate);
 	}
 
 

@@ -177,7 +177,7 @@ namespace BookstorePointOfSale.DataViewModel
 
 
         //Report One: getting total sales by date
-        public static void GetTotalSalesByDate(DateTime date)
+        public static double GetTotalSalesByDate(DateTime date)
         {
             string query = @"SELECT SUM(b.unit_price * i.quantity_sold) AS TotalSales
                             FROM sales s
@@ -191,13 +191,24 @@ namespace BookstorePointOfSale.DataViewModel
                 {
                     command.Parameters.AddWithValue("@date", date);
                     var totalSales = command.ExecuteScalar();
+
+                    if (totalSales == DBNull.Value)
+                    {
+                        totalSales = 0;
+                    }
+                    else
+                    {
+                        totalSales = Convert.ToDouble(totalSales);
+                    }
+                    double totalSalesDate = Convert.ToDouble(totalSales);
                     Console.WriteLine($"Total sales for {date.ToString("yyyy-MM-dd")}: {totalSales}");
+                    return totalSalesDate;
                 }
             }
         }
 
         //Report Two: getting total sales per customer
-        public static void GetTotalSalesByCustomer(int customerId)
+        public static double GetTotalSalesByCustomer(int customerId)
         {
             string query = @"SELECT SUM(b.unit_price * i.quantity_sold) AS TotalSales
                             FROM sales s
@@ -212,12 +223,22 @@ namespace BookstorePointOfSale.DataViewModel
                     command.Parameters.AddWithValue("@customerId", customerId);
                     var totalSales = command.ExecuteScalar();
                     Console.WriteLine($"Total sales for customer ID {customerId}: {totalSales}");
+                    if (totalSales == DBNull.Value)
+                    {
+                        totalSales = 0;
+                    }
+                    else
+                    {
+                        totalSales = Convert.ToDouble(totalSales);
+                    }
+                    double totalSalesCustomer = Convert.ToDouble(totalSales);
+                    return totalSalesCustomer;
                 }
             }
         }
 
         //Report Three: getting total sales per date period
-        public static void GetTotalSalesByDatePeriod(DateTime startDate, DateTime endDate)
+        public static double GetTotalSalesByDatePeriod(DateTime startDate, DateTime endDate)
         {
             string query = @"SELECT SUM(b.unit_price * i.quantity_sold) AS TotalSales
                             FROM sales s
@@ -233,6 +254,16 @@ namespace BookstorePointOfSale.DataViewModel
                     command.Parameters.AddWithValue("@endDate", endDate);
                     var totalSales = command.ExecuteScalar();
                     Console.WriteLine($"Total sales from {startDate.ToString("yyyy-MM-dd")} to {endDate.ToString("yyyy-MM-dd")}: {totalSales}");
+                    if (totalSales == DBNull.Value)
+                    {
+                        totalSales = 0;
+                    }
+                    else
+                    {
+                        totalSales = Convert.ToDouble(totalSales);
+                    }
+                    double totalSalesDatePeriod = Convert.ToDouble(totalSales);
+                    return totalSalesDatePeriod;
                 }
             }
         }
