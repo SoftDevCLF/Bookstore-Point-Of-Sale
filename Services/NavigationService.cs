@@ -39,5 +39,10 @@ namespace BookstorePointOfSale.Services
         {
             _navigationManager.NavigateTo($"/updatecustomer/{customerId}");
         }
+
+        public void GoToSalesPage(int customerId)
+        {
+            _navigationManager.NavigateTo($"/sales/{customerId}");
+        }
     }
 }
