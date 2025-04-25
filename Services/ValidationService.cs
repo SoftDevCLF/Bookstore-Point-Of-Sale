@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BookstorePointOfSale.Exceptions;
 
 
 namespace BookstorePointOfSale.Services
@@ -60,6 +61,17 @@ namespace BookstorePointOfSale.Services
         /// <returns>True if valid, false if not</returns>
         public async Task<bool> ValidateName(string firstName, string lastName)
         {
+
+            if (String.IsNullOrEmpty(firstName)) //Check if the first name is empty
+            {
+                await _alertService.JSAlert("Please enter a first name.");
+                return false;
+            }
+            else if (String.IsNullOrEmpty(lastName)) //Check if the last name is empty
+            {
+                await _alertService.JSAlert("Please enter a last name.");
+                return false;
+            }
 
             if (!firstName.All(char.IsLetter)) //Check if the first name contains only letters
             {
@@ -206,5 +218,15 @@ namespace BookstorePointOfSale.Services
             // All checks passed
             return true;
         }
+
+        public void ValidateEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email) || !email.Contains("@") || !email.Contains("."))
+            {
+                throw new InvalidEmailException("Invalid email format.");
+            }
+        }
+        
     }
 }
+

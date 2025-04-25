@@ -77,7 +77,7 @@
                         <td >@foundCustomer.PhoneNumber</td>
                         <td class="text-center">
                             <!-- Button to start a sale-->
-                            <button class="btn btn-success" @* @onclick="EditCustomer(foundCustomer.Id)" *@>Start a Sale</button>
+                            <button class="btn btn-success" @onclick="() => NavService.GoToSalesPage(foundCustomer.CustomerId)">Start a Sale</button>
                             <!--Button to edit the customer-->
                             <button class="btn btn-primary" @onclick="() => NavService.GoToUpdateCustomerPage(foundCustomer.CustomerId)">Update</button>
                             <!--Button to delete the customer-->
