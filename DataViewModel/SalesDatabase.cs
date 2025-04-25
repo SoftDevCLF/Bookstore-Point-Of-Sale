@@ -76,7 +76,7 @@ namespace BookstorePointOfSale.DataViewModel
 
                     //Update the inventory stock
                     string updateStockQuery = "UPDATE inventory SET book_stock = book_stock - @quantitySold WHERE isbn = @isbn;";
-                    using (MySqlCommand updateCommand = new MySqlCommand(updateStockQuery, connection))
+                    using (MySqlCommand updateCommand = new MySqlCommand(updateStockQuery, connection, transaction))
                     {
                         updateCommand.Parameters.AddWithValue("@isbn", saleItem.ISBN);
                         updateCommand.Parameters.AddWithValue("@quantitySold", saleItem.QuantitySold);
@@ -125,6 +125,7 @@ namespace BookstorePointOfSale.DataViewModel
         public static string GenerateReceipt(int saleId)
         {
             var receiptBuilder = new StringBuilder();
+            double totalSale = 0;
 
             string query = @"SELECT s.sale_id, s.sale_date, c.first_name, c.last_name, 
                             i.isbn, i.quantity_sold, b.unit_price, b.book_title
@@ -137,29 +138,29 @@ namespace BookstorePointOfSale.DataViewModel
             using (var connection = GetConnection())
             {
                 connection.Open();
-                using (var command = new MySqlCommand(query, connection))
+                using (MySqlCommand command = new MySqlCommand(query, connection))
                 {
                     command.Parameters.AddWithValue("@saleId", saleId);
                     using (var reader = command.ExecuteReader())
                     {
                         if (reader.HasRows)
                         {
+                            receiptBuilder.AppendLine("========== BOOKSTORE RECEIPT ==========\n");
                             while (reader.Read())
                             {
                                 // Appending lines with formatting for UI
-                                receiptBuilder.AppendLine("========== BOOKSTORE RECEIPT ==========\n");
-                                receiptBuilder.AppendLine($"Sale ID      : {reader["sale_id"]}");
+                                 receiptBuilder.AppendLine($"Sale ID      :{reader["sale_id"]}");
                                 receiptBuilder.AppendLine($"Customer     : {reader["first_name"]} {reader["last_name"]}");
                                 receiptBuilder.AppendLine($"Sale Date    : {Convert.ToDateTime(reader["sale_date"]).ToString("yyyy-MM-dd")}");
                                 receiptBuilder.AppendLine(new string('-', 40));
                                 receiptBuilder.AppendLine($"ISBN         : {reader["isbn"]}");
                                 receiptBuilder.AppendLine($"Book Title   : {reader["book_title"]}");
                                 receiptBuilder.AppendLine($"Qty Sold     : {reader["quantity_sold"]}");
-                                receiptBuilder.AppendLine($"Unit Price   : {Convert.ToDecimal(reader["unit_price"]).ToString("C")}");
+                                receiptBuilder.AppendLine($"Unit Price   : {Convert.ToDouble(reader["unit_price"]).ToString("C")}");
                                 receiptBuilder.AppendLine(new string('-', 40));
 
-                                decimal quantity = Convert.ToDecimal(reader["quantity_sold"]);
-                                decimal price = Convert.ToDecimal(reader["unit_price"]);
+                                double quantity = Convert.ToDouble(reader["quantity_sold"]);
+                                double price = Convert.ToDouble(reader["unit_price"]);
                                 receiptBuilder.AppendLine($"TOTAL        : {(quantity * price).ToString("C")}");
                                 receiptBuilder.AppendLine(new string('=', 40));
                             }

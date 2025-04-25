@@ -1,10 +1,22 @@
-﻿@page "/sales/{customerId:int}"
+﻿@page "/saleReports"
 @using BookstorePointOfSale.DataViewModel
 @using BookstorePointOfSale.DataModel
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
 
+<!--Breadcrumb Navigation-->
+<nav aria-label="breadcrumb" class="bg-secondary bg-opacity-10 rounded-3">
+	<ol class="breadcrumb align-content-center ps-3 pt-1 pb-1">
+		<li class="breadcrumb-item"><a href="/">Sale</a></li>
+		<li class="breadcrumb-item active" aria-current="page">Sale Reports</li>
+	</ol>
+</nav>
+
+
+<hr/>
 <h3>Sale Reports</h3>
+<hr />
+
 
 
 <h5>View Total Sales by Date</h5>
@@ -12,7 +24,7 @@
 <button class="btn btn-primary" @onclick="GetSalesByDate">Get Total Sales</button>
 @if (totalSalesByDate != null)
 {
-		<p>Total Sales on @reportDate.ToString("yyyy-MM-dd"): $@totalSalesByDate</p>
+	<p>Total Sales on @reportDate.ToString("yyyy-MM-dd"): $@totalSalesByDate</p>
 }
 
 <h5>View Total Sales Per Customer</h5>
@@ -31,6 +43,7 @@
 {
 	<p>Total Sales on @reportDate.ToString("yyyy-MM-dd"): $@totalSalesByDate?.ToString("C2")</p>
 }
+
 
 
 @code {

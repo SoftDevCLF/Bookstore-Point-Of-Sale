@@ -4,8 +4,6 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 
-<h3>Sales</h3>
-
 <!-- Breadcrumb Navigation -->
 <div class="container mt-3">
     <nav aria-label="breadcrumb" class="bg-secondary bg-opacity-10 rounded-3">
@@ -19,6 +17,7 @@
     <hr />
     <p class="ms-2 text-muted">Search inventory and manage sales.</p>
 </div>
+
 @if (!isLoaded)
 {
     <p>Customer not found</p>
@@ -31,6 +30,7 @@ else
 
 <h3>Add Book to Sale</h3>
 <div class="container mt-4">
+
     <!-- Input Form for ISBN and Quantity -->
     <div class="form-group mb-3">
         <label for="searchInput">Enter ISBN</label>
@@ -42,7 +42,7 @@ else
         <input type="number" id="quantityInput" class="form-control" @bind="quantityInput" placeholder="Enter Quantity" min="1" />
     </div>
 
-    <button class="btn btn-primary" @onclick="AddtoSale">Add to Sale</button>
+    <button class="btn btn-primary" @onclick="AddtoSale">Add To Sale</button>
 </div>
 
 <!-- Display the Sale Items -->
@@ -64,23 +64,29 @@ else
             <tr>
                 <td>@item.ISBN</td>
                 <td>@book?.Title</td>
-                <td>@item.QuantitySold</td> <!-- Or @item.Quantity if that's the correct property -->
+                <td>@item.QuantitySold</td>
                 <td>@book?.Price</td>
                 <td>@(item.QuantitySold * (book?.Price ?? 0))</td>
             </tr>
         }
-
     </tbody>
 </table>
 <h4>Total: @totalAmount</h4>
+
 <!-- Confirm and Cancel Buttons -->
 <div class="container mt-4">
     <button class="btn btn-success" @onclick="ConfirmSaleItemandAddToSale">Confirm Sale</button>
     <button class="btn btn-danger" @onclick="CancelSale">Cancel Sale</button>
 </div>
 
-
-<!--Confirm and Cancel-->
+<!-- Receipt Generation -->
+@if (!string.IsNullOrWhiteSpace(receiptText))
+{
+    <div class="mt-4">
+        <h4>Receipt</h4>
+        <pre>@receiptText</pre>
+    </div>
+}
 
 
 
@@ -91,6 +97,8 @@ else
     private double totalSale;
     private int quantityInput = 1; // Default quantity
     private double totalAmount = 0;
+    private string receiptText = "";
+    private static int lastSaleId = 0;
 
     private string searchBy = "isbn"; // Default search by ISBN
     List<Inventory> foundBooks= new List<Inventory>();
@@ -100,23 +108,22 @@ else
     public int customerId { get; set; } //Bind the customerId from route to the property
 
     private Customer Customer = new();
-	private bool isLoaded = false;
+    private bool isLoaded = false;
 
     //Retrieve customer from DB
-	protected override async Task OnParametersSetAsync()
-	{
+    protected override async Task OnParametersSetAsync()
+    {
         Customer = CustomerDatabase.GetCustomerById(customerId);
-		if (Customer == null) //Check if the customer was found
-		{
-			await JS.InvokeVoidAsync("alert", "Customer not found.");
-			Navigation.NavigateTo("/customerManagement");
-		}
-		else
-		{
-			isLoaded = true; // Set isLoaded to true if customer is found
-		}
-	}
-
+        if (Customer == null) //Check if the customer was found
+        {
+            await JS.InvokeVoidAsync("alert", "Customer not found.");
+            Navigation.NavigateTo("/customerManagement");
+        }
+        else
+        {
+            isLoaded = true; // Set isLoaded to true if customer is found
+        }
+    }
 
     private List<Inventory> allBooks = new List<Inventory>();
 
@@ -214,6 +221,9 @@ else
                 totalAmount += book.Price * item.QuantitySold;
             }
 
+            // Generate receipt
+            receiptText = SalesDatabase.GenerateReceipt(saleId);
+
             await JS.InvokeVoidAsync("alert", "Sale confirmed!");
 
             // Clear all local states after sale
@@ -227,39 +237,38 @@ else
         }
     }
 
+    // Cancel Sale
+    private async Task CancelSale()
+    {
+        // Logic to cancel the sale
+        if (saleItems.Count == 0)
+        {
+            await JSAlert("No items in the sale to cancel.");
+            return;
+        }
+        // Reset the sale items and total amount
+        saleItems.Clear();
+        totalAmount = 0;
 
+        // Update inventory for each item in the sale
+        foreach (var item in saleItems)
+        {
+            var book = InventoryDatabase.SearchByISBN(item.ISBN);
+            if (book != null)
+            {
+                book.Quantity += item.QuantitySold; // Assuming QuantitySold is the quantity sold
+            }
+        }
 
+        await JS.InvokeVoidAsync("alert", "Sale cancelled!");
 
+        //state has changed
 
-	// Cancel Sale
-	private async Task CancelSale()
-	{
-		// Logic to cancel the sale
-		if (saleItems.Count == 0)
-		{
-			await JSAlert("No items in the sale to cancel.");
-			return;
-		}
-		// Reset the sale items and total amount
-		saleItems.Clear();
-		totalAmount = 0;
+        StateHasChanged();
+    }
 
-		// Update inventory for each item in the sale
-		foreach (var item in saleItems)
-		{
-			var book = InventoryDatabase.SearchByISBN(item.ISBN);
-			if (book != null)
-			{
-				book.Quantity += item.QuantitySold; // Assuming QuantitySold is the quantity sold
-			}
-		}
+ 
 
-		await JS.InvokeVoidAsync("alert", "Sale cancelled!");
-
-		//state has changed
-
-		StateHasChanged();
-	}
     // JS Async Alert Method
     private async Task JSAlert(string message)
     {
