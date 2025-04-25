@@ -110,7 +110,10 @@
     </div>
 </div>
 
-
+ <!--Navigate to Sale Customer Button-->
+<div class="container mt-4">
+    <button class="btn btn-info" @onclick="NavigateToSalesReport">View Sales Reports</button>
+</div>
 
 
 @code {
@@ -132,6 +135,12 @@
 
     private Customer Customer = new();
     private bool isLoaded = false;
+
+    //Navigation
+    private void NavigateToSalesReport()
+    {
+        Navigation.NavigateTo("/saleReports"); // Adjust the route to match your sales report page
+    }
 
     //Retrieve customer from DB
     protected override async Task OnParametersSetAsync()
@@ -305,12 +314,7 @@
 
         // Refresh the UI
         StateHasChanged();
-
-
-        //Update UI
-        StateHasChanged();
     }
-
 
     // JS Async Alert Method
     private async Task JSAlert(string message)
@@ -318,6 +322,10 @@
         await JS.InvokeVoidAsync("alert", message);
     }
 }
+
+
+
+
  
 
     

@@ -5,44 +5,80 @@
 @inject NavigationManager Navigation
 
 <!--Breadcrumb Navigation-->
-<nav aria-label="breadcrumb" class="bg-secondary bg-opacity-10 rounded-3">
-	<ol class="breadcrumb align-content-center ps-3 pt-1 pb-1">
-		<li class="breadcrumb-item"><a href="/">Sale</a></li>
-		<li class="breadcrumb-item active" aria-current="page">Sale Reports</li>
-	</ol>
+<nav aria-label="breadcrumb" class="bg-secondary bg-opacity-10 rounded-3 p-3 mb-4">
+    <ol class="breadcrumb align-items-center m-0">
+        <li class="breadcrumb-item"><a href="/" class="text-decoration-none">Sale</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Sale Reports</li>
+    </ol>
 </nav>
 
+<div class="container">
+    <h3 class="text-info mb-4"> Sale Reports</h3>
 
-<hr/>
-<h3>Sale Reports</h3>
-<hr />
+    <!-- View Total Sales by Date -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title text-secondary">View Total Sales by Date</h5>
+            <div class="mb-3">
+                <label for="reportDate" class="form-label">Select Date:</label>
+                <input type="date" id="reportDate" @bind="reportDate" class="form-control" />
+            </div>
+            <button class="btn btn-info" @onclick="GetSalesByDate">Get Total Sales</button>
+            @if (totalSalesByDate != null)
+            {
+                <p class="mt-3">
+                    Total Sales on <strong>@reportDate.ToString("yyyy-MM-dd")</strong>:
+                    <span class="text-success fw-bold">$@totalSalesByDate</span>
+                </p>
+            }
+        </div>
+    </div>
 
+    <!-- View Total Sales Per Customer -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title text-secondary">View Total Sales Per Customer</h5>
+            <div class="mb-3">
+                <label for="customerId" class="form-label">Enter Customer ID:</label>
+                <input type="number" id="customerId" @bind="customerId" class="form-control" placeholder="Customer ID" />
+            </div>
+            <button class="btn btn-info" @onclick="GetSalesByCustomer">Get Total Sales</button>
+            @if (totalSalesByCustomer != null)
+            {
+                <p class="mt-3">
+                    Total Sales for <strong>Customer ID @customerId</strong>:
+                    <span class="text-success fw-bold">$@totalSalesByCustomer</span>
+                </p>
+            }
+        </div>
+    </div>
 
+    <!-- View Total Sales Per Date Period -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <h5 class="card-title text-secondary">View Total Sales Per Date Period</h5>
+            <div class="mb-3">
+                <label for="startDate" class="form-label">Start Date:</label>
+                <input type="date" id="startDate" @bind="startDate" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label for="endDate" class="form-label">End Date:</label>
+                <input type="date" id="endDate" @bind="endDate" class="form-control" />
+            </div>
+            <button class="btn btn-info" @onclick="GetSalesByDatePeriod">Get Total Sales</button>
+            @if (totalSalesByDatePeriod != null)
+            {
+                <p class="mt-3">
+                    Total Sales between
+                    <strong>@startDate.ToString("yyyy-MM-dd")</strong> and
+                    <strong>@endDate.ToString("yyyy-MM-dd")</strong>:
+                    <span class="text-success fw-bold">$@totalSalesByDatePeriod</span>
+                </p>
+            }
+        </div>
+    </div>
+</div>
 
-<h5>View Total Sales by Date</h5>
-<input type="date" @bind="reportDate" class="form-control mb-2" />
-<button class="btn btn-primary" @onclick="GetSalesByDate">Get Total Sales</button>
-@if (totalSalesByDate != null)
-{
-	<p>Total Sales on @reportDate.ToString("yyyy-MM-dd"): $@totalSalesByDate</p>
-}
-
-<h5>View Total Sales Per Customer</h5>
-<button class="btn btn-primary" @onclick="GetSalesByCustomer">Get Total Sales</button>
-@if (totalSalesByCustomer != null)
-{
-	<p>Total Sales for Customer ID @customerId: $@totalSalesByCustomer</p>
-}
-
-
-<h5>View Total Sales Per Date Period</h5>
-<input type="date" @bind="startDate" class="form-control mb-2" />
-<input type="date" @bind="endDate" class="form-control mb-2" />
-<button class="btn btn-primary" @onclick="GetSalesByDatePeriod">Get Total Sales</button>
-@if (totalSalesByDatePeriod != null)
-{
-	<p>Total Sales on @reportDate.ToString("yyyy-MM-dd"): $@totalSalesByDate?.ToString("C2")</p>
-}
 
 
 
