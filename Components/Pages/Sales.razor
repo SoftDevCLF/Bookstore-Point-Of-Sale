@@ -19,6 +19,15 @@
     <hr />
     <p class="ms-2 text-muted">Search inventory and manage sales.</p>
 </div>
+@if (!isLoaded)
+{
+    <p>Customer not found</p>
+}
+else
+{
+    <h4>Customer ID: @Customer.CustomerId</h4>
+    <h4>Customer Name: @Customer.FirstName @Customer.LastName</h4>
+}
 
 <h3>Add Book to Sale</h3>
 <div class="container mt-4">
@@ -89,14 +98,15 @@
 
     [Parameter] 
     public int customerId { get; set; } //Bind the customerId from route to the property
-    private Customer selectedCustomer = new();
+
+    private Customer Customer = new();
 	private bool isLoaded = false;
 
     //Retrieve customer from DB
 	protected override async Task OnParametersSetAsync()
 	{
-		selectedCustomer = CustomerDatabase.GetCustomerById(customerId); //Get the customer from the database and assign it to the selected customer
-		if (selectedCustomer == null) //Check if the customer was found
+        Customer = CustomerDatabase.GetCustomerById(customerId);
+		if (Customer == null) //Check if the customer was found
 		{
 			await JS.InvokeVoidAsync("alert", "Customer not found.");
 			Navigation.NavigateTo("/customerManagement");
