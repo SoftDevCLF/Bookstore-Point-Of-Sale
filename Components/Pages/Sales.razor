@@ -9,84 +9,107 @@
     <nav aria-label="breadcrumb" class="bg-secondary bg-opacity-10 rounded-3">
         <ol class="breadcrumb align-content-center ps-3 pt-1 pb-1">
             <li class="breadcrumb-item"><a href="/">Home</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Sale Reports</li>
+            <li class="breadcrumb-item active" aria-current="page">Sales</li>
         </ol>
     </nav>
     <hr />
     <h1>Sales</h1>
     <hr />
     <p class="ms-2 text-muted">Search inventory and manage sales.</p>
+
+
+    @if (!isLoaded)
+    {
+        <p>Customer not found</p>
+    }
+    else
+    {
+        <hr/>
+        <h4>Current Customer:</h4>
+        <h7>Customer ID: @Customer.CustomerId</h7>
+        <br/>
+        <h7>Customer Name: @Customer.FirstName @Customer.LastName</h7>
+        <hr/>
+    }
+
+
+    <div class="d-flex">
+        <!-- Sale Management Section -->
+        <div class="flex-grow-1 me-4">
+            <!--Adding book to Sale-->
+            <h3>Current Item In Sale</h3>
+            <div class="form-group mb-3">
+                <label for="searchInput">Enter ISBN</label>
+                <input type="text" id="searchInput" class="form-control" @bind="searchInput" placeholder="Enter Book ISBN" />
+            </div>
+
+            <div class="form-group mb-3">
+                <label for="quantityInput">Quantity</label>
+                <input type="number" id="quantityInput" class="form-control" @bind="quantityInput" placeholder="Enter Quantity" min="1" />
+            </div>
+
+            <button class="btn btn-primary" @onclick="AddtoSale">Add to Sale</button>
+
+            <!-- Display the Sale Items -->
+            <br/>
+            <br/>
+
+            <h4>Current Sale Items</h4>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ISBN</th>
+                        <th>Title</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                        <th>Sub-total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in saleItems)
+                    {
+                        var book = allBooks.FirstOrDefault(b => b.ISBN == item.ISBN);
+                        <tr>
+                            <td>@item.ISBN</td>
+                            <td>@book?.Title</td>
+                            <td>@item.QuantitySold</td>
+                            <td>@book?.Price.ToString("C")</td>
+                            <td>@(item.QuantitySold * (book?.Price ?? 0))</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="4" class="text-end fw-bold">Grand Total:</td>
+                        <td class="fw-bold text-end">@totalAmount.ToString("C")</td>
+                    </tr>
+                </tfoot>
+            </table>
+
+
+            <div class="container mt-4">
+                <button class="btn btn-success me-2" @onclick="ConfirmSaleItemandAddToSale">Confirm Sale</button>
+                <button class="btn btn-danger me-2" @onclick="CancelSale">Cancel Sale</button>
+            </div>
+        </div>
+
+        <!-- Receipt Section -->
+        <div class="receipt-container border rounded bg-white p-3" style="width: 300px;">
+            <h4>Receipt</h4>
+            @if (!string.IsNullOrWhiteSpace(receiptText))
+            {
+                <pre>@receiptText</pre>
+                <button class="btn btn-secondary mt-6" @onclick="ClearReceipt">Clear Receipt</button>
+
+            }
+            else
+            {
+                <p class="text-muted">Receipt not available yet.</p>
+            }
+        </div>
+    </div>
 </div>
 
-@if (!isLoaded)
-{
-    <p>Customer not found</p>
-}
-else
-{
-    <h4>Customer ID: @Customer.CustomerId</h4>
-    <h4>Customer Name: @Customer.FirstName @Customer.LastName</h4>
-}
-
-<h3>Add Book to Sale</h3>
-<div class="container mt-4">
-
-    <!-- Input Form for ISBN and Quantity -->
-    <div class="form-group mb-3">
-        <label for="searchInput">Enter ISBN</label>
-        <input type="text" id="searchInput" class="form-control" @bind="searchInput" placeholder="Enter Book ISBN" />
-    </div>
-
-    <div class="form-group mb-3">
-        <label for="quantityInput">Quantity</label>
-        <input type="number" id="quantityInput" class="form-control" @bind="quantityInput" placeholder="Enter Quantity" min="1" />
-    </div>
-
-    <button class="btn btn-primary" @onclick="AddtoSale">Add To Sale</button>
-</div>
-
-<!-- Display the Sale Items -->
-<h4>Items in Sale</h4>
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>ISBN</th>
-            <th>Title</th>
-            <th>Quantity</th>
-            <th>Price</th>
-            <th>Subtotal</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in saleItems)
-        {
-            var book = allBooks.FirstOrDefault(b => b.ISBN == item.ISBN);
-            <tr>
-                <td>@item.ISBN</td>
-                <td>@book?.Title</td>
-                <td>@item.QuantitySold</td>
-                <td>@book?.Price</td>
-                <td>@(item.QuantitySold * (book?.Price ?? 0))</td>
-            </tr>
-        }
-    </tbody>
-</table>
-<h4>Total: @totalAmount</h4>
-
-<!-- Confirm and Cancel Buttons -->
-<div class="container mt-4">
-    <button class="btn btn-success" @onclick="ConfirmSaleItemandAddToSale">Confirm Sale</button>
-    <button class="btn btn-danger" @onclick="CancelSale">Cancel Sale</button>
-</div>
-
-<!-- Receipt Generation -->
-@if (!string.IsNullOrWhiteSpace(receiptText))
-{
-    <div class="mt-4">
-        <h4>Receipt</h4>
-        <pre>@receiptText</pre>
-    </div>
-}
 
 
 
@@ -125,8 +148,11 @@ else
         }
     }
 
+
+    //List for Inventory books
     private List<Inventory> allBooks = new List<Inventory>();
 
+    // Initialize the component
     protected override void OnInitialized()
     {
         allBooks = InventoryDatabase.GetAllBooks();
@@ -222,7 +248,7 @@ else
             }
 
             // Generate receipt
-            receiptText = SalesDatabase.GenerateReceipt(saleId);
+            receiptText = SalesDatabase.GenerateReceipt(customerId);
 
             await JS.InvokeVoidAsync("alert", "Sale confirmed!");
 
@@ -267,7 +293,24 @@ else
         StateHasChanged();
     }
 
- 
+    //Clear Receipt Button
+    private async Task ClearReceipt()
+    {
+        //Reset receipt text, sale items, and total amount
+        // Reset receipt text, sale items, and total amount
+        receiptText = string.Empty;
+        saleItems.Clear();
+        totalAmount = 0;
+        quantityInput = 1; // Reset quantity input
+
+        // Refresh the UI
+        StateHasChanged();
+
+
+        //Update UI
+        StateHasChanged();
+    }
+
 
     // JS Async Alert Method
     private async Task JSAlert(string message)
