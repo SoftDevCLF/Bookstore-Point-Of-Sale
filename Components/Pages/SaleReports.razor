@@ -13,7 +13,7 @@
 </nav>
 
 <div class="container">
-    <h3 class="fw-bold mb-4"> Sale Reports</h3>
+    <h3 class="fw-bold mb-4">Sale Reports</h3>
 
     <!-- View Total Sales by Date -->
     <div class="card mb-4 shadow-sm">
@@ -28,7 +28,7 @@
             {
                 <p class="mt-3">
                     Total Sales on <strong>@reportDate.ToString("yyyy-MM-dd")</strong>:
-                    <span class="text-success fw-bold">$@totalSalesByDate</span>
+                    <span class="text-success fw-bold">$@totalSalesByDate.Value.ToString("F2")</span>
                 </p>
             }
         </div>
@@ -47,7 +47,7 @@
             {
                 <p class="mt-3">
                     Total Sales for <strong>Customer ID @customerId</strong>:
-                    <span class="text-success fw-bold">$@totalSalesByCustomer</span>
+                    <span class="text-success fw-bold">$@totalSalesByCustomer.Value.ToString("F2")</span>
                 </p>
             }
         </div>
@@ -72,7 +72,7 @@
                     Total Sales between
                     <strong>@startDate.ToString("yyyy-MM-dd")</strong> and
                     <strong>@endDate.ToString("yyyy-MM-dd")</strong>:
-                    <span class="text-success fw-bold">$@totalSalesByDatePeriod</span>
+                    <span class="text-success fw-bold">$@totalSalesByDatePeriod.Value.ToString("F2")</span>
                 </p>
             }
         </div>
@@ -83,12 +83,17 @@
 
 
 @code {
+	//Properties
 	private DateTime reportDate = DateTime.Today;
 	private DateTime startDate = DateTime.Now.AddDays(-7); //Default 7 days ago
 	private DateTime endDate = DateTime.Now; //Default today
+
+	//Nullable double properties to hold sales data
 	private double? totalSalesByDate;
 	private double? totalSalesByCustomer;
 	private double? totalSalesByDatePeriod;
+
+	//Nullable int property to hold customer ID
 	private int customerId;
 
 	//Call GetSalesByDate method

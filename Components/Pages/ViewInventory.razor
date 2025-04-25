@@ -1,6 +1,7 @@
 ﻿@page "/viewInventory"
 @using BookstorePointOfSale.DataModel
 @using BookstorePointOfSale.DataViewModel
+@inject NavigationManager Navigation
 
 <nav aria-label="breadcrumb" class="bg-secondary bg-opacity-10 rounded-3">
 	<ol class="breadcrumb align-content-center ps-3 pt-1 pb-1">
@@ -11,9 +12,10 @@
 </nav>
 
 <hr/>
-
-<h1>View All Inventory</h1>
-
+ <div class="d-flex justify-content-between align-items-center">
+	<h1 class="">View All Inventory</h1>
+            <button class="btn btn-info me-2" @onclick="NavigateToCustomerManagement">Click Here To Get Started With A Customer To Make A Sale</button>
+</div>
 <hr/>
 
 @if (!isLoaded)
@@ -70,4 +72,12 @@ else
 		inventoryList = await Task.Run(() => InventoryDatabase.GetAllBooks());
 		isLoaded = true;
 	}
+
+
+	//Navigate to Customer Management to start a sale
+	private void NavigateToCustomerManagement()
+	{
+		Navigation.NavigateTo("/customerManagement");
+	}
+
 }

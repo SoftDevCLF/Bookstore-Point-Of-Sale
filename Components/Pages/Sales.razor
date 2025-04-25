@@ -14,13 +14,17 @@
     </nav>
     <hr />
     <div class="d-flex justify-content-between align-items-center">
-        <h1 class="text-primary">Sales</h1>
-        <button class="btn btn-info" @onclick="NavigateToSalesReport">View Sales Reports</button>
+        <h1 class="">Sales</h1>
+        <div class="d-flex">
+            <button class="btn btn-info me-2" @onclick="NavigateToSalesReport">View Sales Reports</button>
+            <button class="btn btn-warning" @onclick="NavigateToViewInventory">View Inventory</button>
+        </div>
+
     </div>
     <hr />
     <p class="ms-2 text-muted">Search inventory and manage sales.</p>
 
-
+    <!--Display Customer from Previous Page-->
     @if (!isLoaded)
     {
         <p>Customer not found</p>
@@ -35,9 +39,8 @@
         <hr/>
     }
 
-
+    <!-- Sale Management Section -->
     <div class="d-flex">
-        <!-- Sale Management Section -->
         <div class="flex-grow-1 me-4">
             <!--Adding book to Sale-->
             <h3>Current Item In Sale</h3>
@@ -45,18 +48,15 @@
                 <label for="searchInput">Enter ISBN</label>
                 <input type="text" id="searchInput" class="form-control" @bind="searchInput" placeholder="Enter Book ISBN" />
             </div>
-
             <div class="form-group mb-3">
                 <label for="quantityInput">Quantity</label>
                 <input type="number" id="quantityInput" class="form-control" @bind="quantityInput" placeholder="Enter Quantity" min="1" />
             </div>
-
             <button class="btn btn-primary" @onclick="AddtoSale">Add to Sale</button>
 
             <!-- Display the Sale Items -->
             <br/>
             <br/>
-
             <h4>Current Sale Items</h4>
             <table class="table table-striped">
                 <thead>
@@ -65,13 +65,15 @@
                         <th>Title</th>
                         <th>Quantity</th>
                         <th>Price</th>
-                        <th>Sub-total</th>
+                        <th>Subtotal</th>
                     </tr>
                 </thead>
                 <tbody>
+                    <!-- Loop through saleItems and add properties -->
                     @foreach (var item in saleItems)
                     {
-                        var book = allBooks.FirstOrDefault(b => b.ISBN == item.ISBN);
+                        <!-- Retrieve first element in sequence, using first or defualt -->
+                        var book = allBooks.FirstOrDefault(b => b.ISBN == item.ISBN);   
                         <tr>
                             <td>@item.ISBN</td>
                             <td>@book?.Title</td>
@@ -96,15 +98,13 @@
             </table>
 		</div>
 
-
         <!-- Receipt Section -->
         <div class="receipt-container border rounded bg-white p-3" style="width: 300px;">
             <h4>Receipt</h4>
             @if (!string.IsNullOrWhiteSpace(receiptText))
             {
-                <pre>@receiptText</pre>
+                <pre>@receiptText</pre> <!-- Preformatted text -->
                 <button class="btn btn-secondary mt-6" @onclick="ClearReceipt">Clear Receipt</button>
-
             }
             else
             {
@@ -118,32 +118,52 @@
 
 
 @code {
+    //List to store sale items for transaction
     private List<SaleItem> saleItems = new List<SaleItem>();
-    private string searchInput;
-    private int saleId;
-    private double totalSale;
-    private int quantityInput = 1; // Default quantity
-    private double totalAmount = 0;
-    private string receiptText = "";
-    private static int lastSaleId = 0;
 
-    private string searchBy = "isbn"; // Default search by ISBN
-    List<Inventory> foundBooks= new List<Inventory>();
+    //List for Inventory books
+    private List<Inventory> allBooks = new List<Inventory>();
+    //Book search Results
+    List<Inventory> foundBooks = new List<Inventory>();
     Inventory foundBook = null;
 
-    [Parameter] 
-    public int customerId { get; set; } //Bind the customerId from route to the property
+	//Input fields for search and quantity
+    private string searchInput;
+    private string searchBy = "isbn"; // Default search by ISBN
 
+    //Variables for Sale
+    private int saleId;
+    private double totalSale;
+    private double totalAmount = 0;
+    private static int lastSaleId = 0;
+
+	//Receipt text variable
+    private string receiptText = "";
+   
+	//Quantity input for sale
+    private int quantityInput = 1; // Default quantity
+   
+	//Customer object to hold customer data
+    [Parameter] 
+    public int customerId { get; set; } 
+
+	//Customer object to hold customer data and check if loaded
     private Customer Customer = new();
     private bool isLoaded = false;
 
-    //Navigation
+    //Navigation to Sales Report Page
     private void NavigateToSalesReport()
     {
-        Navigation.NavigateTo("/saleReports"); // Adjust the route to match your sales report page
+        Navigation.NavigateTo("/saleReports"); 
     }
 
-    //Retrieve customer from DB
+    //Navigation to View Inventory Page
+	private void NavigateToViewInventory()
+	{
+		Navigation.NavigateTo("/viewInventory");
+	}
+
+    //Retrieve customer from Database
     protected override async Task OnParametersSetAsync()
     {
         Customer = CustomerDatabase.GetCustomerById(customerId);
@@ -158,21 +178,19 @@
         }
     }
 
-
-    //List for Inventory books
-    private List<Inventory> allBooks = new List<Inventory>();
-
-    // Initialize the component
+	// Initialize the component to retrieve all book information
     protected override void OnInitialized()
     {
         allBooks = InventoryDatabase.GetAllBooks();
     }
 
-    // Add books to the Sale
+    //Add books to the Sale
     private async Task AddtoSale()
     {
+		// Initialize the foundBook variable
         foundBook = null;
 
+		// Check if the book is already in the sale
         try
         {
             // Validate inputs
@@ -181,17 +199,27 @@
                 await JS.InvokeVoidAsync("alert", "Please enter a valid ISBN and quantity.");
                 return;
             }
-
             // Search by ISBN
             foundBook = InventoryDatabase.SearchByISBN(searchInput); // Search by ISBN
 
-            // Handle the case where no book is found
+            //Handle the case where no book is found
             if (foundBook == null)
             {
                 await JS.InvokeVoidAsync("alert", "Book not found in inventory.");
                 return;
             }
-
+			//Handle the case where the quantity is not available
+			if (foundBook.Quantity <= 0)
+			{
+				await JS.InvokeVoidAsync("alert", "Book is out of stock.");
+				return;
+			}
+            //Handle the case where the quantity is greater than available
+			if (quantityInput > foundBook.Quantity)
+			{
+				await JS.InvokeVoidAsync("alert", "Quantity exceeds available stock.");
+				return;
+			}
             // Check stock availability
             if (foundBook.Quantity < quantityInput)
             {
@@ -202,13 +230,13 @@
             // Add the SaleItem to the sale
             var saleItem = new SaleItem(saleId, foundBook.ISBN, quantityInput);
             saleItems.Add(saleItem);
-            totalAmount += foundBook.Price * quantityInput;
+			totalAmount += foundBook.Price * quantityInput; // Calculate total amount
 
-            //state has changed
+			//Change state and refresh the UI
             StateHasChanged();
 
-            // Update inventory
-            foundBook.Quantity -= quantityInput;
+            //Update inventory
+			foundBook.Quantity -= quantityInput; //Update the inventory
 
             await JS.InvokeVoidAsync("alert", "Book found and added to the sale.");
 
@@ -223,17 +251,18 @@
         }
     }
 
-    // Confirm Sale
+    //Confirm Sale
     private async Task ConfirmSaleItemandAddToSale()
     {
         try
         {
+			// Check if there are items in the sale
             if (saleItems.Count == 0)
             {
                 await JS.InvokeVoidAsync("alert", "No items in the sale to confirm.");
                 return;
             }
-
+			//Loop through each item in the sale and check if the book is in the inventory
             foreach (var item in saleItems)
             {
                 // Get the book for price and inventory update
@@ -243,7 +272,6 @@
                     await JS.InvokeVoidAsync("alert", $"Book with ISBN {item.ISBN} not found in inventory.");
                     return;
                 }
-
                 // Save to SalesDatabase
                 var result = SalesDatabase.AddSaleItem(item, customerId, totalSale);
                 if (result == null)
@@ -273,7 +301,7 @@
         }
     }
 
-    // Cancel Sale
+    //Cancel Sale
     private async Task CancelSale()
     {
         // Logic to cancel the sale
@@ -298,15 +326,13 @@
 
         await JS.InvokeVoidAsync("alert", "Sale cancelled!");
 
-        //state has changed
-
+		//Refresh the UI
         StateHasChanged();
     }
 
     //Clear Receipt Button
     private async Task ClearReceipt()
     {
-        //Reset receipt text, sale items, and total amount
         // Reset receipt text, sale items, and total amount
         receiptText = string.Empty;
         saleItems.Clear();

@@ -8,8 +8,17 @@ namespace BookstorePointOfSale.DataModel
 {
     public class Sales
     {
+        /// <summary>
+        /// Property for the sale ID
+        /// </summary>
         public int SaleId { get; set; }
+        /// <summary>
+        /// Property for the Customer ID
+        /// </summary>
         public int CustomerId { get; set; }
+        /// <summary>
+        /// Property for SaleDate
+        /// </summary>
         public DateTime SaleDate { get; set; }
 
         /// <summary>
