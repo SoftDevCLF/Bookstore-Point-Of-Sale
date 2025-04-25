@@ -262,7 +262,7 @@ namespace BookstorePointOfSale.DataViewModel
                             reader.GetString("editorial"),
                             reader.GetString("year"),
                             reader.GetString("genre"),
-                            reader.IsDBNull(reader.GetOrdinal("comments")) ? null : reader.GetString("comments"),
+                            reader.IsDBNull("comments") ? null : reader.GetString("Comments"),
                             reader.GetInt32("book_stock"),
                             (double)reader.GetDecimal("unit_price")
                         );
@@ -274,29 +274,40 @@ namespace BookstorePointOfSale.DataViewModel
             return inventoryList;
         }
 
-        public static List<Inventory> SearchByTitle (string title) 
+        /// <summary>
+        /// Searches for inventory books whose titles contain the specified keyword (case-insensitive).
+        /// </summary>
+        /// <param name="title">The partial or full title of the book to search for.</param>
+        /// <returns>
+        /// A list of <see cref="Inventory"/> objects that match the search criteria. 
+        /// Returns an empty list if no matches are found.
+        /// </returns>
+        public static List<Inventory> SearchByTitle(string title)
         {
             List<Inventory> matchingBooks = new List<Inventory>();
 
-            using (MySqlConnection connection = GetConnection()) 
+            using (MySqlConnection connection = GetConnection())
             {
                 connection.Open();
 
+                // SQL query to search for books with matching title (case-insensitive)
                 string sql = @"
-                    SELECT 
-                        b.isbn, b.book_title, b.author, b.edition, b.editorial,
-                        b.year, b.genre, b.comments, b.unit_price, i.book_stock
-                    FROM book b
-                    JOIN inventory i ON b.isbn = i.isbn
-                    WHERE LOWER(b.book_title) LIKE CONCAT('%', LOWER(@title), '%')";
+            SELECT 
+                b.isbn, b.book_title, b.author, b.edition, b.editorial,
+                b.year, b.genre, b.comments, b.unit_price, i.book_stock
+            FROM book b
+            JOIN inventory i ON b.isbn = i.isbn
+            WHERE LOWER(b.book_title) LIKE CONCAT('%', LOWER(@title), '%')";
 
-                using (MySqlCommand command = new MySqlCommand( sql, connection)) 
+                using (MySqlCommand command = new MySqlCommand(sql, connection))
                 {
+                    // Add the title as a parameter to prevent SQL injection
                     command.Parameters.AddWithValue("@title", title);
 
                     using (MySqlDataReader reader = command.ExecuteReader())
                     {
-                        while (reader.Read()) 
+                        // Read each result row and construct Inventory objects
+                        while (reader.Read())
                         {
                             Inventory item = new Inventory(
                                 reader.GetString("isbn"),
@@ -308,15 +319,16 @@ namespace BookstorePointOfSale.DataViewModel
                                 reader.GetString("genre"),
                                 reader.IsDBNull("comments") ? null : reader.GetString("Comments"),
                                 reader.GetInt32("book_stock"),
-                                (double) reader.GetDecimal("unit_price")
+                                (double)reader.GetDecimal("unit_price")
                             );
-                            matchingBooks.Add(item);    
+
+                            matchingBooks.Add(item);
                         }
                     }
                 }
             }
+
             return matchingBooks;
         }
     }
-
 }
