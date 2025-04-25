@@ -13,6 +13,7 @@ namespace BookstorePointOfSale.Services
             void GoToCustomerManagementPage();
             void GoToAddNewCustomerPage();
             void GoToUpdateCustomerPage(int customerId);
+            void GoToSalesPage(int customerId);
         }
     }
 }
