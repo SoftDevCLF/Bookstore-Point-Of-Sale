@@ -11,9 +11,12 @@
         <li class="breadcrumb-item active" aria-current="page">Sale Reports</li>
     </ol>
 </nav>
-
 <div class="container">
-    <h3 class="mb-4">Sale Reports</h3>
+    <!-- Section Header with Button -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="">Sale Reports</h1>
+        <button class="btn btn-primary" @onclick="NavigateToCustomerManagement">Begin Sale With Customer</button>
+    </div>
 
     <!-- View Total Sales by Date -->
     <div class="card mb-4 shadow-sm">
@@ -79,9 +82,6 @@
     </div>
 </div>
 
-
-
-
 @code {
 	//Properties
 	private DateTime reportDate = DateTime.Today;
@@ -113,6 +113,12 @@
 	{
 		totalSalesByDatePeriod = SalesDatabase.GetTotalSalesByDatePeriod(startDate, endDate);
 	}
+
+	//Navigation to Customer Mangement page
+    private void NavigateToCustomerManagement()
+    {
+        Navigation.NavigateTo("/customerManagement");
+    }
 
 
 }
