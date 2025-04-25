@@ -96,7 +96,7 @@
                     </tr>
                 </tfoot>
             </table>
-		</div>
+        </div>
 
         <!-- Receipt Section -->
         <div class="receipt-container border rounded bg-white p-3" style="width: 300px;">
@@ -104,7 +104,6 @@
             @if (!string.IsNullOrWhiteSpace(receiptText))
             {
                 <pre>@receiptText</pre> <!-- Preformatted text -->
-                <button class="btn btn-secondary mt-6" @onclick="ClearReceipt">Clear Receipt</button>
             }
             else
             {
@@ -127,7 +126,7 @@
     List<Inventory> foundBooks = new List<Inventory>();
     Inventory foundBook = null;
 
-	//Input fields for search and quantity
+    //Input fields for search and quantity
     private string searchInput;
     private string searchBy = "isbn"; // Default search by ISBN
 
@@ -137,17 +136,17 @@
     private double totalAmount = 0;
     private static int lastSaleId = 0;
 
-	//Receipt text variable
+    //Receipt text variable
     private string receiptText = "";
-   
-	//Quantity input for sale
+
+    //Quantity input for sale
     private int quantityInput = 1; // Default quantity
-   
-	//Customer object to hold customer data
+
+    //Customer object to hold customer data
     [Parameter] 
     public int customerId { get; set; } 
 
-	//Customer object to hold customer data and check if loaded
+    //Customer object to hold customer data and check if loaded
     private Customer Customer = new();
     private bool isLoaded = false;
 
@@ -158,10 +157,10 @@
     }
 
     //Navigation to View Inventory Page
-	private void NavigateToViewInventory()
-	{
-		Navigation.NavigateTo("/viewInventory");
-	}
+    private void NavigateToViewInventory()
+    {
+        Navigation.NavigateTo("/viewInventory");
+    }
 
     //Retrieve customer from Database
     protected override async Task OnParametersSetAsync()
@@ -178,19 +177,22 @@
         }
     }
 
-	// Initialize the component to retrieve all book information
+    // Initialize the component to retrieve all book information
     protected override void OnInitialized()
     {
         allBooks = InventoryDatabase.GetAllBooks();
     }
 
-    //Add books to the Sale
     private async Task AddtoSale()
     {
-		// Initialize the foundBook variable
+        // Check if there are items in the sale
+        if (saleItems.Count == 0)
+        {
+            receiptText = ""; // Clear receipt text
+        }
+        // Initialize the foundBook variable
         foundBook = null;
 
-		// Check if the book is already in the sale
         try
         {
             // Validate inputs
@@ -199,46 +201,61 @@
                 await JS.InvokeVoidAsync("alert", "Please enter a valid ISBN and quantity.");
                 return;
             }
-            // Search by ISBN
-            foundBook = InventoryDatabase.SearchByISBN(searchInput); // Search by ISBN
 
-            //Handle the case where no book is found
+            // Search by ISBN
+            foundBook = InventoryDatabase.SearchByISBN(searchInput);
+
+            // Handle the case where no book is found
             if (foundBook == null)
             {
                 await JS.InvokeVoidAsync("alert", "Book not found in inventory.");
                 return;
             }
-			//Handle the case where the quantity is not available
-			if (foundBook.Quantity <= 0)
-			{
-				await JS.InvokeVoidAsync("alert", "Book is out of stock.");
-				return;
-			}
-            //Handle the case where the quantity is greater than available
-			if (quantityInput > foundBook.Quantity)
-			{
-				await JS.InvokeVoidAsync("alert", "Quantity exceeds available stock.");
-				return;
-			}
-            // Check stock availability
-            if (foundBook.Quantity < quantityInput)
+
+            // Handle stock-related validations
+            if (foundBook.Quantity <= 0)
             {
-                await JS.InvokeVoidAsync("alert", "Not enough stock available.");
+                await JS.InvokeVoidAsync("alert", "Book is out of stock.");
                 return;
             }
 
-            // Add the SaleItem to the sale
-            var saleItem = new SaleItem(saleId, foundBook.ISBN, quantityInput);
-            saleItems.Add(saleItem);
-			totalAmount += foundBook.Price * quantityInput; // Calculate total amount
+            if (quantityInput > foundBook.Quantity)
+            {
+                await JS.InvokeVoidAsync("alert", "Quantity exceeds available stock.");
+                return;
+            }
 
-			//Change state and refresh the UI
+            // Check if the item already exists in the current sale
+            var existingSaleItem = saleItems.FirstOrDefault(item => item.ISBN == foundBook.ISBN);
+
+            if (existingSaleItem != null)
+            {
+                // Update quantity and subtotal for the existing item
+                existingSaleItem.QuantitySold += quantityInput;
+                totalAmount += foundBook.Price * quantityInput;
+
+                // Update inventory
+                foundBook.Quantity -= quantityInput;
+
+                await JS.InvokeVoidAsync("alert", "Book quantity updated in the sale.");
+            }
+            else
+            {
+                // Create a new SaleItem and add it to the sale
+                var saleItem = new SaleItem(saleId, foundBook.ISBN, quantityInput);
+                saleItems.Add(saleItem);
+
+                // Update total amount
+                totalAmount += foundBook.Price * quantityInput;
+
+                // Update inventory
+                foundBook.Quantity -= quantityInput;
+
+                await JS.InvokeVoidAsync("alert", "Book added to the sale.");
+            }
+
+            // Refresh the UI
             StateHasChanged();
-
-            //Update inventory
-			foundBook.Quantity -= quantityInput; //Update the inventory
-
-            await JS.InvokeVoidAsync("alert", "Book found and added to the sale.");
 
             // Clear input fields
             searchInput = "";
@@ -246,7 +263,7 @@
         }
         catch (Exception ex)
         {
-            // Catch any unexpected errors and show them
+            // Catch any unexpected errors
             await JS.InvokeVoidAsync("alert", $"An error occurred: {ex.Message}");
         }
     }
@@ -256,13 +273,14 @@
     {
         try
         {
-			// Check if there are items in the sale
+            // Check if there are items in the sale
             if (saleItems.Count == 0)
             {
+                receiptText = ""; // Clear receipt text
                 await JS.InvokeVoidAsync("alert", "No items in the sale to confirm.");
                 return;
             }
-			//Loop through each item in the sale and check if the book is in the inventory
+            //Loop through each item in the sale and check if the book is in the inventory
             foreach (var item in saleItems)
             {
                 // Get the book for price and inventory update
@@ -304,6 +322,8 @@
     //Cancel Sale
     private async Task CancelSale()
     {
+        //reset receipt text
+        receiptText = "";
         // Logic to cancel the sale
         if (saleItems.Count == 0)
         {
@@ -330,18 +350,18 @@
         StateHasChanged();
     }
 
-    //Clear Receipt Button
-    private async Task ClearReceipt()
-    {
-        // Reset receipt text, sale items, and total amount
-        receiptText = string.Empty;
-        saleItems.Clear();
-        totalAmount = 0;
-        quantityInput = 1; // Reset quantity input
+    // Clear Receipt Button
+    // private async Task ClearReceipt()
+    // {
+    //     Reset receipt text, sale items, and total amount
+    //     receiptText = string.Empty;
+    //     saleItems.Clear();
+    //     totalAmount = 0;
+    //     quantityInput = 1; Reset quantity input
 
-        // Refresh the UI
-        StateHasChanged();
-    }
+    //     Refresh the UI
+    //     StateHasChanged();
+    // }
 
     // JS Async Alert Method
     private async Task JSAlert(string message)

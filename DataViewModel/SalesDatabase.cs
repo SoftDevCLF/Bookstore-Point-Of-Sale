@@ -136,66 +136,58 @@ namespace BookstorePointOfSale.DataViewModel
         /// <summary>
         /// Generates a receipt for a customer based on their ID
         /// </summary>
+        /// <param name="saleItems" ></param>
         /// <param name="customerId"></param>
         /// <returns>Receipt builder item</returns>
-        public static string GenerateReceipt(int customerId)
+        public static string GenerateReceipt(List<SaleItem> saleItems, int customerId)
         {
             var receiptBuilder = new StringBuilder();
             double totalSale = 0;
 
-            // SQL query to get sales information for the customer, using Join to combine tables
-            string query = @"SELECT s.sale_id, s.sale_date, c.first_name, c.last_name, 
-                     i.isbn, i.quantity_sold, b.unit_price, b.book_title
-              FROM sales s
-              JOIN customer c ON s.customer_id = c.customer_id
-              JOIN sale_item i ON s.sale_id = i.sale_id
-              JOIN book b ON i.isbn = b.isbn
-              WHERE c.customer_id = @customerId";
-
-            using (var connection = GetConnection())
+            // Get customer info
+            var customer = CustomerDatabase.GetCustomerById(customerId);
+            if (customer == null)
             {
-                connection.Open();
-                using (MySqlCommand command = new MySqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@customerId", customerId);
-                    using (var reader = command.ExecuteReader())
-                    {
-                        if (reader.HasRows)
-                        {
-                            // Appending lines with formatting for UI
-                            receiptBuilder.AppendLine("========== BOOKSTORE RECEIPT ==========\n");
-
-                            while (reader.Read())
-                            {
-                                // Appending more lines with formatting for UI
-                                receiptBuilder.AppendLine($"Sale ID      : {reader["sale_id"]}");
-                                receiptBuilder.AppendLine($"Customer     : {reader["first_name"]} {reader["last_name"]}");
-                                receiptBuilder.AppendLine($"Sale Date    : {Convert.ToDateTime(reader["sale_date"]).ToString("yyyy-MM-dd")}");
-                                receiptBuilder.AppendLine(new string('-', 40));
-                                receiptBuilder.AppendLine($"ISBN         : {reader["isbn"]}");
-                                receiptBuilder.AppendLine($"Book Title   : {reader["book_title"]}");
-                                receiptBuilder.AppendLine($"Qty Sold     : {reader["quantity_sold"]}");
-                                receiptBuilder.AppendLine($"Unit Price   : {Convert.ToDouble(reader["unit_price"]).ToString("C")}");
-                                receiptBuilder.AppendLine(new string('-', 40));
-
-                                double quantity = Convert.ToDouble(reader["quantity_sold"]);
-                                double price = Convert.ToDouble(reader["unit_price"]);
-                                receiptBuilder.AppendLine($"Subtotal     : {(quantity * price).ToString("C")}\n");
-                                // Calculate total sale
-                                totalSale += quantity * price;
-                            }
-                            //More formatting
-                            receiptBuilder.AppendLine(new string('=', 40));
-                            receiptBuilder.AppendLine($"GRAND TOTAL  : {totalSale.ToString("C")}");
-                            receiptBuilder.AppendLine(new string('=', 40));
-                        }
-                        else
-                        {
-                            receiptBuilder.AppendLine("No sales found for this customer.");
-                        }
-                    }
-                }
+                return "Customer not found";
             }
+
+            // Get current date/time
+            var saleDate = DateTime.Now;
+
+            receiptBuilder.AppendLine("========== BOOKSTORE RECEIPT ==========\n");
+            receiptBuilder.AppendLine($"Sale Date    : {saleDate.ToString("yyyy-MM-dd HH:mm:ss")}");
+            receiptBuilder.AppendLine($"Customer     : {customer.FirstName} {customer.LastName}");
+            receiptBuilder.AppendLine(new string('-', 40));
+
+            // Process each item in the current sale
+            foreach (var item in saleItems)
+            {
+                var book = InventoryDatabase.SearchByISBN(item.ISBN);
+                if (book == null) continue;
+
+                receiptBuilder.AppendLine($"ISBN         : {item.ISBN}");
+                receiptBuilder.AppendLine($"Title        : {book.Title}");
+                receiptBuilder.AppendLine($"Qty          : {item.QuantitySold}");
+                receiptBuilder.AppendLine($"Unit Price   : {book.Price.ToString("C")}");
+
+                double subtotal = item.QuantitySold * book.Price;
+                totalSale += subtotal;
+
+                receiptBuilder.AppendLine($"Subtotal     : {subtotal.ToString("C")}");
+                receiptBuilder.AppendLine(new string('-', 40));
+            }
+
+            if (saleItems.Count > 0)
+            {
+                receiptBuilder.AppendLine(new string('=', 40));
+                receiptBuilder.AppendLine($"GRAND TOTAL  : {totalSale.ToString("C")}");
+                receiptBuilder.AppendLine(new string('=', 40));
+            }
+            else
+            {
+                receiptBuilder.AppendLine("No items in current sale.");
+            }
+
             return receiptBuilder.ToString();
         }
 
