@@ -1,77 +1,112 @@
 ﻿@page "/editBook/{isbn}"
 @using BookstorePointOfSale.DataModel
 @using BookstorePointOfSale.DataViewModel
-@inject NavigationManager Navigation
-@inject IJSRuntime JS
+@using BookstorePointOfSale.Services
+@inject NavigationService NavService
+@inject AlertService alertService
+@inject ValidationService validationService
 
+<!-- Breadcrumb navigation for context -->
 <nav aria-label="breadcrumb" class="bg-secondary bg-opacity-10 rounded-3">
-	<ol class="breadcrumb align-content-center ps-3 pt-1 pb-1">
-		<li class="breadcrumb-item"><a href="/">Home</a></li>
-		<li class="breadcrumb-item"><a href="/inventoryManagement">Inventory Management</a></li>
-		<li class="breadcrumb-item active" aria-current="page">Edit Book</li>
-	</ol>
+    <ol class="breadcrumb align-content-center ps-3 pt-1 pb-1">
+        <li class="breadcrumb-item"><a href="/">Home</a></li>
+        <li class="breadcrumb-item"><a href="/inventoryManagement">Inventory Management</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Edit Book</li>
+    </ol>
 </nav>
 
 <hr/>
 
+<!-- Page title -->
 <h1>Edit Book Details</h1>
 
 <hr/>
 
-@if (isLoaded)
+<!-- Show form only when data is loaded -->
+@if (isLoaded)  
 {
     <div class="container mt-3">
         <div class="row">
+            <!-- Left column for form inputs -->
             <div class="col-6">
+                <!-- Book edit form -->
                 <form @onsubmit="UpdateInventory">
-					<div class="mb-3">
-						<label>Title</label>
-						<input class="form-control" @bind="inventory.Title" />
-					</div>
+                    <!-- Title input -->
+                    <div class="mb-3">
+                        <label>Title</label>
+                        <input class="form-control" @bind="inventory.Title" />
+                    </div>
 
-					<div class="mb-3">
-						<label>Author</label>
-						<input class="form-control" @bind="inventory.Author" />
-					</div>
+                    <!-- Author input -->
+                    <div class="mb-3">
+                        <label>Author</label>
+                        <input class="form-control" @bind="inventory.Author" />
+                    </div>
 
-					<div class="mb-3">
-						<label>Edition</label>
-						<input class="form-control" @bind="inventory.Edition" />
-					</div>
+                    <!-- Edition input -->
+                    <div class="mb-3">
+                        <label>Edition</label>
+                        <input class="form-control" @bind="inventory.Edition" />
+                    </div>
 
-					<div class="mb-3">
-						<label>Editorial</label>
-						<input class="form-control" @bind="inventory.Editorial" />
-					</div>
+                    <!-- Editorial input -->
+                    <div class="mb-3">
+                        <label>Editorial</label>
+                        <input class="form-control" @bind="inventory.Editorial" />
+                    </div>
 
-					<div class="mb-3">
-						<label>Year</label>
-						<input class="form-control" @bind="inventory.Year" />
-					</div>
+                    <!-- Year input -->
+                    <div class="mb-3">
+                        <label>Year</label>
+                        <input class="form-control" @bind="inventory.Year" />
+                    </div>
 
-					<div class="mb-3">
-						<label>Genre</label>
-						<input class="form-control" @bind="inventory.Genre" />
-					</div>
+                    <!-- Genre input -->
+                    <div class="mb-3">
+                        <label>Genre</label>
+                        <input class="form-control" @bind="inventory.Genre" />
+                    </div>
 
-					<div class="mb-3">
-						<label>Comments</label>
-						<textarea class="form-control" @bind="inventory.Comments"></textarea>
-					</div>
+                    <!-- Comments input (optional) -->
+                    <div class="mb-3">
+                        <label>Comments</label>
+                        <textarea class="form-control" @bind="inventory.Comments"></textarea>
+                    </div>
 
-					<div class="mb-3">
-						<label>Price</label>
-						<input class="form-control" type="number" step="0.01" @bind="inventory.Price" />
-					</div>
+                    <!-- Price input -->
+                    <div class="mb-3">
+                        <label>Price</label>
+                        <input class="form-control" type="number" step="0.01" @bind="inventory.Price" />
+                    </div>
 
-					<button class="btn btn-success" type="submit">Save Changes</button>
+                    <!-- Quantity input -->
+                    <div class="mb-3">
+                        <label class="form-label">Quantity</label>
+                        <input type="number" @bind="inventory.Quantity" class="form-control" />
+                    </div>
+
+                    <!-- Submit and Navigation Buttons -->
+                    <div class="d-flex gap-2 mt-3">
+                        <!-- Save Changes Button -->
+                        <button class="btn btn-success" type="submit">Save Changes</button>
+
+                            @if (updateSuccessful)
+                            {
+                                <!-- Back to Inventory Button (only shows after successful update) -->
+                                <button type="button" class="btn btn-secondary" @onclick="NavService.GoToInventoryManagementPage">
+                                    Back to Inventory Management
+                                </button>
+                            }
+                    </div>
 
                 </form>
             </div>
 
+            <!-- Right column for confirmation summary -->
             <div class="col-6">
                 @if (inventory != null && updateSuccessful)
                 {
+                    <!-- Display confirmation and summary of updated book -->
                     <h4>Updated Book Overview</h4>
                     <div class="bg-secondary bg-gradient bg-opacity-10 rounded-3 p-3">
                         <div><img src="bookshop.jpg" alt="Books" class="img-fluid rounded-3" /></div>
@@ -81,7 +116,7 @@
                         <div class="p-3"><div class="text-muted">Editorial</div>@inventory.Editorial</div>
                         <div class="p-3"><div class="text-muted">Year</div>@inventory.Year</div>
                         <div class="p-3"><div class="text-muted">Genre</div>@inventory.Genre</div>
-						<div class="p-3"><div class="text-muted">Comments</div>@inventory.Comments</div>
+                        <div class="p-3"><div class="text-muted">Comments</div>@inventory.Comments</div>
                         <div class="p-3"><div class="text-muted">Price</div>@inventory.Price.ToString("C")</div>
                         <div class="p-3"><div class="text-muted">Quantity</div>@inventory.Quantity</div>
                     </div>
@@ -92,36 +127,131 @@
 }
 else
 {
+    <!-- Display while book info is loading -->
     <div class="text-muted">Loading book details...</div>
 }
 
 
-
 @code {
-	[Parameter] public string isbn { get; set; }
-	private Inventory? inventory;
+    /// <summary>
+    /// ISBN value retrieved from the route parameter.
+    /// </summary>
+    [Parameter] public string isbn { get; set; }
 
-	private bool isLoaded = false;
-	private bool updateSuccessful = false;
+    /// <summary>
+    /// Inventory object that holds the current book's data to be edited.
+    /// </summary>
+    private Inventory? inventory;
 
-	protected override async Task OnInitializedAsync()
-	{
-		inventory = await Task.Run(() => InventoryDatabase.SearchByISBN(isbn));
-		isLoaded = true;
-	}
+    /// <summary>
+    /// Flag to indicate whether the inventory data has been successfully loaded.
+    /// </summary>
+    private bool isLoaded = false;
 
-	private async Task UpdateInventory()
-	{
-		int rowsAffected = await Task.Run(() => InventoryDatabase.UpdateBook(inventory));
+    /// <summary>
+    /// Flag to indicate whether the update operation was successful.
+    /// </summary>
+    private bool updateSuccessful = false;
 
-		if (rowsAffected > 0)
-		{
-			updateSuccessful = true;
-		}
-		else
-		{
-			await JS.InvokeVoidAsync("alert", "Update failed.");
-		}
-	}
+    /// <summary>
+    /// Called when the component is initialized. Loads the book information using the ISBN.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        // Load book details by ISBN from the database in a background task
+        inventory = await Task.Run(() => InventoryDatabase.SearchByISBN(isbn));
+        isLoaded = true; // Mark as loaded so the form can be displayed
+    }
 
+    /// <summary>
+    /// Handles the update of the inventory record in the database.
+    /// Performs validation before updating.
+    /// </summary>
+    private async Task UpdateInventory()
+    {
+        // Prevent operation if inventory is null (safety check)
+        if (inventory == null)
+            return;
+
+        // Validate the Year format first (must be 4-digit number)
+        if (!await validationService.ValidateYear(inventory.Year))
+        return;
+
+
+        // Perform validation; exit early if invalid
+        if (!await ValidateInventoryInputs())
+            return;
+
+        // Attempt to update the inventory in the database
+        int rowsAffected = await Task.Run(() => InventoryDatabase.UpdateBook(inventory));
+
+        // Check if update was successful
+        if (rowsAffected > 0)
+        {
+            updateSuccessful = true; // Trigger updated book preview
+        }
+        else
+        {
+            // Notify user of failure
+            await alertService.JSAlert("Update failed.");
+        }
+    }
+
+    /// <summary>
+    /// Validates user inputs in the inventory form to ensure required fields are filled correctly.
+    /// </summary>
+    /// <returns>True if all validations pass; otherwise, false.</returns>
+    private async Task<bool> ValidateInventoryInputs()
+    {
+        // Check if the title is provided
+        if (string.IsNullOrWhiteSpace(inventory.Title))
+        {
+            await alertService.JSAlert("Title is required.");
+            return false;
+        }
+
+        // Check if the author is provided
+        if (string.IsNullOrWhiteSpace(inventory.Author))
+        {
+            await alertService.JSAlert("Author is required.");
+            return false;
+        }
+
+        // Ensure edition is a positive number
+        if (inventory.Edition <= 0)
+        {
+            await alertService.JSAlert("Edition is required and must be greater than 0.");
+            return false;
+        }
+
+        // Editorial must not be empty
+        if (string.IsNullOrWhiteSpace(inventory.Editorial))
+        {
+            await alertService.JSAlert("Editorial is required.");
+            return false;
+        }
+
+        // Genre is required
+        if (string.IsNullOrWhiteSpace(inventory.Genre))
+        {
+            await alertService.JSAlert("Genre is required.");
+            return false;
+        }
+
+        // Price must not be negative
+        if (inventory.Price < 0)
+        {
+            await alertService.JSAlert("Price cannot be negative.");
+            return false;
+        }
+
+        // Quantity must not be negative
+        if (inventory.Quantity < 0)
+        {
+            await alertService.JSAlert("Quantity cannot be negative.");
+            return false;
+        }
+
+        return true; // All validations passed
+    }
 }

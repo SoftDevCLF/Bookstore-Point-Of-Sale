@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using BookstorePointOfSale.DataModel;
-
+using BookstorePointOfSale.Exceptions;
 using MySqlConnector;
 
 namespace BookstorePointOfSale.DataViewModel
@@ -81,12 +81,24 @@ namespace BookstorePointOfSale.DataViewModel
 
                 try
                 {
+                    string checkSql = "SELECT COUNT(*) FROM book WHERE isbn = @isbn";
+                    using (MySqlCommand checkCommand = new MySqlCommand(checkSql, connection, transaction)) 
+                    {
+                        checkCommand.Parameters.AddWithValue("@isbn", book.ISBN);
+                        int count = Convert.ToInt32(checkCommand.ExecuteScalar());
+
+                        if (count > 0) 
+                        {
+                            throw new DuplicateISBNException($"Error Invalid ISBN! A book with ISBN {book.ISBN} already exists.");
+                        }
+                    }
+
                     string sql1 = @"
-                    INSERT INTO book 
-                    (isbn, book_title, author, edition, editorial, year, genre, comments, unit_price)
-                    VALUES 
-                    (@isbn, @title, @author, @edition, @editorial, @year, 
-                    @genre, @comments, @unit_price)";
+                        INSERT INTO book 
+                            (isbn, book_title, author, edition, editorial, year, genre, comments, unit_price)
+                        VALUES 
+                            (@isbn, @title, @author, @edition, @editorial, @year, 
+                            @genre, @comments, @unit_price)";
 
                     using (MySqlCommand command = new MySqlCommand(sql1, connection, transaction))
                     {
@@ -250,7 +262,7 @@ namespace BookstorePointOfSale.DataViewModel
                             reader.GetString("editorial"),
                             reader.GetString("year"),
                             reader.GetString("genre"),
-                            reader.IsDBNull(reader.GetOrdinal("comments")) ? null : reader.GetString("comments"),
+                            reader.IsDBNull("comments") ? null : reader.GetString("Comments"),
                             reader.GetInt32("book_stock"),
                             (double)reader.GetDecimal("unit_price")
                         );
@@ -261,6 +273,62 @@ namespace BookstorePointOfSale.DataViewModel
             }
             return inventoryList;
         }
-    }
 
+        /// <summary>
+        /// Searches for inventory books whose titles contain the specified keyword (case-insensitive).
+        /// </summary>
+        /// <param name="title">The partial or full title of the book to search for.</param>
+        /// <returns>
+        /// A list of <see cref="Inventory"/> objects that match the search criteria. 
+        /// Returns an empty list if no matches are found.
+        /// </returns>
+        public static List<Inventory> SearchByTitle(string title)
+        {
+            List<Inventory> matchingBooks = new List<Inventory>();
+
+            using (MySqlConnection connection = GetConnection())
+            {
+                connection.Open();
+
+                // SQL query to search for books with matching title (case-insensitive)
+                string sql = @"
+            SELECT 
+                b.isbn, b.book_title, b.author, b.edition, b.editorial,
+                b.year, b.genre, b.comments, b.unit_price, i.book_stock
+            FROM book b
+            JOIN inventory i ON b.isbn = i.isbn
+            WHERE LOWER(b.book_title) LIKE CONCAT('%', LOWER(@title), '%')";
+
+                using (MySqlCommand command = new MySqlCommand(sql, connection))
+                {
+                    // Add the title as a parameter to prevent SQL injection
+                    command.Parameters.AddWithValue("@title", title);
+
+                    using (MySqlDataReader reader = command.ExecuteReader())
+                    {
+                        // Read each result row and construct Inventory objects
+                        while (reader.Read())
+                        {
+                            Inventory item = new Inventory(
+                                reader.GetString("isbn"),
+                                reader.GetString("book_title"),
+                                reader.GetString("author"),
+                                reader.GetInt32("edition"),
+                                reader.GetString("editorial"),
+                                reader.GetString("year"),
+                                reader.GetString("genre"),
+                                reader.IsDBNull("comments") ? null : reader.GetString("Comments"),
+                                reader.GetInt32("book_stock"),
+                                (double)reader.GetDecimal("unit_price")
+                            );
+
+                            matchingBooks.Add(item);
+                        }
+                    }
+                }
+            }
+
+            return matchingBooks;
+        }
+    }
 }
