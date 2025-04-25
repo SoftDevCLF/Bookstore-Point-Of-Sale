@@ -13,7 +13,10 @@
         </ol>
     </nav>
     <hr />
-    <h1>Sales</h1>
+    <div class="d-flex justify-content-between align-items-center">
+        <h1 class="text-primary">Sales</h1>
+        <button class="btn btn-info" @onclick="NavigateToSalesReport">View Sales Reports</button>
+    </div>
     <hr />
     <p class="ms-2 text-muted">Search inventory and manage sales.</p>
 
@@ -83,15 +86,16 @@
                         <td colspan="4" class="text-end fw-bold">Grand Total:</td>
                         <td class="fw-bold text-end">@totalAmount.ToString("C")</td>
                     </tr>
+                    <tr>
+                        <td colspan="5" class="text-end">
+                            <button class="btn btn-success me-2" @onclick="ConfirmSaleItemandAddToSale">Confirm Sale</button>
+                            <button class="btn btn-danger" @onclick="CancelSale">Cancel Sale</button>
+                        </td>
+                    </tr>
                 </tfoot>
             </table>
+		</div>
 
-
-            <div class="container mt-4">
-                <button class="btn btn-success me-2" @onclick="ConfirmSaleItemandAddToSale">Confirm Sale</button>
-                <button class="btn btn-danger me-2" @onclick="CancelSale">Cancel Sale</button>
-            </div>
-        </div>
 
         <!-- Receipt Section -->
         <div class="receipt-container border rounded bg-white p-3" style="width: 300px;">
@@ -110,10 +114,7 @@
     </div>
 </div>
 
- <!--Navigate to Sale Customer Button-->
-<div class="container mt-4">
-    <button class="btn btn-info" @onclick="NavigateToSalesReport">View Sales Reports</button>
-</div>
+
 
 
 @code {
