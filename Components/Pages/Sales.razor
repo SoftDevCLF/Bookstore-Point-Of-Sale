@@ -51,19 +51,24 @@
     <tbody>
         @foreach (var item in saleItems)
         {
-            var book = InventoryDatabase.SearchByISBN(item.ISBN); // Get book details by ISBN
+            var book = allBooks.FirstOrDefault(b => b.ISBN == item.ISBN);
             <tr>
                 <td>@item.ISBN</td>
                 <td>@book?.Title</td>
-                <td>@item.QuantitySold</td>
+                <td>@item.QuantitySold</td> <!-- Or @item.Quantity if that's the correct property -->
                 <td>@book?.Price</td>
                 <td>@(item.QuantitySold * (book?.Price ?? 0))</td>
             </tr>
         }
+
     </tbody>
 </table>
-
 <h4>Total: @totalAmount</h4>
+<!-- Confirm and Cancel Buttons -->
+<div class="container mt-4">
+    <button class="btn btn-success" @onclick="ConfirmSaleItem">Confirm Sale</button>
+    <button class="btn btn-danger" @onclick="CancelSale">Cancel Sale</button>
+</div>
 
 
 <!--Confirm and Cancel-->
@@ -77,9 +82,17 @@
     private int quantityInput = 1; // Default quantity
     private double totalAmount = 0;
 
-	private string searchBy = "isbn"; // Default search by ISBN
-	List<Inventory> foundBooks= new List<Inventory>();
+    private string searchBy = "isbn"; // Default search by ISBN
+    List<Inventory> foundBooks= new List<Inventory>();
     Inventory foundBook = null;
+
+
+    private List<Inventory> allBooks = new List<Inventory>();
+
+    protected override void OnInitialized()
+    {
+        allBooks = InventoryDatabase.GetAllBooks();
+    }
 
     // Add books to the Sale
     private async Task AddtoSale()
@@ -117,6 +130,9 @@
             saleItems.Add(saleItem);
             totalAmount += foundBook.Price * quantityInput;
 
+            //state has changed
+            StateHasChanged();
+
             // Update inventory
             foundBook.Quantity -= quantityInput;
 
@@ -133,14 +149,78 @@
         }
     }
 
+   private async Task ConfirmSaleItem()
+{
+    // Logic to confirm the sale
+    if (saleItems.Count == 0)
+    {
+        await JSAlert("No items in the sale to confirm.");
+        return;
+    }
+
+    foreach (var item in saleItems)
+    {
+        bool success = SalesDatabase.ConfirmSale(item);  // Handle the sale confirmation
+        if (!success)
+        {
+            await JSAlert("Failed to confirm sale.");
+            return;
+        }
+
+        // Call AddSaleItem to add each sale item to the database
+        bool addItemSuccess = SalesDatabase.AddSaleItem(item);
+        if (!addItemSuccess)
+        {
+            await JSAlert("Failed to add sale item.");
+            return;
+        }
+    }
+
+    // This could involve saving the sale to a database or processing payment
+    await JS.InvokeVoidAsync("alert", "Sale confirmed!");
+
+    // Reset after confirming
+    saleItems.Clear();
+}
+
+
+
+	// Cancel Sale
+	private async Task CancelSale()
+	{
+		// Logic to cancel the sale
+		if (saleItems.Count == 0)
+		{
+			await JSAlert("No items in the sale to cancel.");
+			return;
+		}
+		// Reset the sale items and total amount
+		saleItems.Clear();
+		totalAmount = 0;
+
+		// Update inventory for each item in the sale
+		foreach (var item in saleItems)
+		{
+			var book = InventoryDatabase.SearchByISBN(item.ISBN);
+			if (book != null)
+			{
+				book.Quantity += item.QuantitySold; // Assuming QuantitySold is the quantity sold
+			}
+		}
+
+		await JS.InvokeVoidAsync("alert", "Sale cancelled!");
+
+		//state has changed
+
+		StateHasChanged();
+	}
     // JS Async Alert Method
     private async Task JSAlert(string message)
     {
         await JS.InvokeVoidAsync("alert", message);
     }
 }
-}
-    
+ 
 
     
 

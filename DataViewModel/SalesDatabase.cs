@@ -11,6 +11,7 @@ using System.Transactions;
 
 
 
+
 namespace BookstorePointOfSale.DataViewModel
 {
     /// <summary>
@@ -24,8 +25,9 @@ namespace BookstorePointOfSale.DataViewModel
         public SalesDatabase() : base() { }
 
         //Method to add sale item //isbn, quantity, total, 
-        public static SaleItem AddSaleItem(SaleItem saleItem)
+        public static bool AddSaleItem(SaleItem saleItem)
         {
+
             using (MySqlConnection connection = GetConnection())
             {
                 connection.Open();
@@ -54,8 +56,10 @@ namespace BookstorePointOfSale.DataViewModel
                     saleItem.SaleId = Convert.ToInt32(getSaleIdCommand.ExecuteScalar()); // Assign the correct SaleId
                 }
             }
-            return saleItem; //return the sale item
+            return true; // Indicate success
         }
+   
+
 
 
         //Method to confirm sale, reduces the quantity of the book in stock
@@ -65,8 +69,8 @@ namespace BookstorePointOfSale.DataViewModel
             {
                 connection.Open();
 
-                //Reduce the inventory stock
-                string updateStockQuery = "UPDATE book SET book_stock = book_stock - @quantitySold WHERE isbn = @isbn;";
+                // Reduce the inventory stock
+                string updateStockQuery = "UPDATE inventory SET book_stock = book_stock - @quantitySold WHERE isbn = @isbn;";
                 using (MySqlCommand updateCommand = new MySqlCommand(updateStockQuery, connection))
                 {
                     updateCommand.Parameters.AddWithValue("@isbn", saleItem.ISBN);
@@ -74,13 +78,16 @@ namespace BookstorePointOfSale.DataViewModel
                     updateCommand.ExecuteNonQuery();
                 }
 
-                //Add sale item to sale_item table
+                // Add sale item to sale_item table
                 AddSaleItem(saleItem);
 
                 Console.WriteLine("Sale confirmed successfully.");
                 return true;
             }
         }
+
+
+
 
 
         //Method to cancel sale, increases the quantity of the book in stock
