@@ -243,11 +243,11 @@ namespace BookstorePointOfSale.DataViewModel
             {
                 connection.Open();
                 string sql = @"
-                SELECT 
-                    b.isbn, b.book_title, b.author, b.edition, b.editorial,
-                    b.year, b.genre, b.comments, b.unit_price, i.book_stock
-                FROM book b
-                JOIN inventory i ON b.isbn = i.isbn";
+        SELECT 
+            b.isbn, b.book_title, b.author, b.edition, b.editorial,
+            b.year, b.genre, b.comments, b.unit_price, i.book_stock
+        FROM book b
+        JOIN inventory i ON b.isbn = i.isbn";
 
                 using (MySqlCommand command = new MySqlCommand(sql, connection))
                 using (MySqlDataReader reader = command.ExecuteReader())

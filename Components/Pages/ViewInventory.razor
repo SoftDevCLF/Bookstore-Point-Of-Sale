@@ -1,6 +1,7 @@
 ﻿@page "/viewInventory"
 @using BookstorePointOfSale.DataModel
 @using BookstorePointOfSale.DataViewModel
+@inject NavigationManager Navigation
 @using BookstorePointOfSale.Services
 @inject NavigationService navigationService
 
@@ -16,12 +17,12 @@
     </ol>
 </nav>
 
-<hr />
-
-<!-- Main heading for the page -->
-<h1>View All Inventory</h1>
-
-<hr />
+<hr/>
+ <div class="d-flex justify-content-between align-items-center">
+	<h1 class="">View All Inventory</h1>
+            <button class="btn btn-info me-2" @onclick="NavigateToCustomerManagement">Click Here To Get Started With A Customer To Make A Sale</button>
+</div>
+<hr/>
 
 @if (!isLoaded) // If data is still loading
 {
@@ -107,5 +108,13 @@ else // If data is loaded and inventory is available
 		// Set the flag to indicate loading is complete.
 		isLoaded = true;
 	}
+
+
+	//Navigate to Customer Management to start a sale
+	private void NavigateToCustomerManagement()
+	{
+		Navigation.NavigateTo("/customerManagement");
+	}
+
 
 }

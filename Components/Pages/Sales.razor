@@ -1,5 +1,387 @@
-﻿﻿<h3>Sales</h3>
+﻿@page "/sales/{customerId:int}"
+@using BookstorePointOfSale.DataModel
+@using BookstorePointOfSale.DataViewModel
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<!-- Breadcrumb Navigation -->
+<div class="container mt-3">
+    <nav aria-label="breadcrumb" class="bg-secondary bg-opacity-10 rounded-3">
+        <ol class="breadcrumb align-content-center ps-3 pt-1 pb-1">
+            <li class="breadcrumb-item"><a href="/">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Sales</li>
+        </ol>
+    </nav>
+    <hr />
+    <div class="d-flex justify-content-between align-items-center">
+        <h1 class="">Sales</h1>
+        <div class="d-flex">
+            <button class="btn btn-info me-2" @onclick="NavigateToSalesReport">View Sales Reports</button>
+            <button class="btn btn-warning" @onclick="NavigateToViewInventory">View Inventory</button>
+        </div>
+
+    </div>
+    <hr />
+    <p class="ms-2 text-muted">Search inventory and manage sales.</p>
+
+    <!--Display Customer from Previous Page-->
+    @if (!isLoaded)
+    {
+        <p>Customer not found</p>
+    }
+    else
+    {
+        <hr/>
+        <h4>Current Customer:</h4>
+        <h7>Customer ID: @Customer.CustomerId</h7>
+        <br/>
+        <h7>Customer Name: @Customer.FirstName @Customer.LastName</h7>
+        <hr/>
+    }
+
+    <!-- Sale Management Section -->
+    <div class="d-flex">
+        <div class="flex-grow-1 me-4">
+            <!--Adding book to Sale-->
+            <h3>Current Item In Sale</h3>
+            <div class="form-group mb-3">
+                <label for="searchInput">Enter ISBN</label>
+                <input type="text" id="searchInput" class="form-control" @bind="searchInput" placeholder="Enter Book ISBN" />
+            </div>
+            <div class="form-group mb-3">
+                <label for="quantityInput">Quantity</label>
+                <input type="number" id="quantityInput" class="form-control" @bind="quantityInput" placeholder="Enter Quantity" min="1" />
+            </div>
+            <button class="btn btn-primary" @onclick="AddtoSale">Add to Sale</button>
+
+            <!-- Display the Sale Items -->
+            <br/>
+            <br/>
+            <h4>Current Sale Items</h4>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ISBN</th>
+                        <th>Title</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                        <th>Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Loop through saleItems and add properties -->
+                    @foreach (var item in saleItems)
+                    {
+                        <!-- Retrieve first element in sequence, using first or defualt -->
+                        var book = allBooks.FirstOrDefault(b => b.ISBN == item.ISBN);   
+                        <tr>
+                            <td>@item.ISBN</td>
+                            <td>@book?.Title</td>
+                            <td>@item.QuantitySold</td>
+                            <td>@book?.Price.ToString("C")</td>
+                            <td>@(item.QuantitySold * (book?.Price ?? 0))</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="4" class="text-end fw-bold">Grand Total:</td>
+                        <td class="fw-bold text-end">@totalAmount.ToString("C")</td>
+                    </tr>
+                    <tr>
+                        <td colspan="5" class="text-end">
+                            <button class="btn btn-success me-2" @onclick="ConfirmSaleItemandAddToSale">Confirm Sale</button>
+                            <button class="btn btn-danger" @onclick="CancelSale">Cancel Sale</button>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- Receipt Section -->
+        <div class="receipt-container border rounded bg-white p-3" style="width: 300px;">
+            <h4>Receipt</h4>
+            @if (!string.IsNullOrWhiteSpace(receiptText))
+            {
+                <pre>@receiptText</pre> <!-- Preformatted text -->
+            }
+            else
+            {
+                <p class="text-muted">Receipt not available yet.</p>
+            }
+        </div>
+    </div>
+</div>
+
+
+
 
 @code {
+    //List to store sale items for transaction
+    private List<SaleItem> saleItems = new List<SaleItem>();
 
+    //List for Inventory books
+    private List<Inventory> allBooks = new List<Inventory>();
+    //Book search Results
+    List<Inventory> foundBooks = new List<Inventory>();
+    Inventory foundBook = null;
+
+    //Input fields for search and quantity
+    private string searchInput;
+    private string searchBy = "isbn"; // Default search by ISBN
+
+    //Variables for Sale
+    private int saleId;
+    private double totalSale;
+    private double totalAmount = 0;
+    private static int lastSaleId = 0;
+
+    //Receipt text variable
+    private string receiptText = "";
+
+    //Quantity input for sale
+    private int quantityInput = 1; // Default quantity
+
+    //Customer object to hold customer data
+    [Parameter] 
+    public int customerId { get; set; } 
+
+    //Customer object to hold customer data and check if loaded
+    private Customer Customer = new();
+    private bool isLoaded = false;
+
+    //Navigation to Sales Report Page
+    private void NavigateToSalesReport()
+    {
+        Navigation.NavigateTo("/saleReports"); 
+    }
+
+    //Navigation to View Inventory Page
+    private void NavigateToViewInventory()
+    {
+        Navigation.NavigateTo("/viewInventory");
+    }
+
+    //Retrieve customer from Database
+    protected override async Task OnParametersSetAsync()
+    {
+        Customer = CustomerDatabase.GetCustomerById(customerId);
+        if (Customer == null) //Check if the customer was found
+        {
+            await JS.InvokeVoidAsync("alert", "Customer not found.");
+            Navigation.NavigateTo("/customerManagement");
+        }
+        else
+        {
+            isLoaded = true; // Set isLoaded to true if customer is found
+        }
+    }
+
+    // Initialize the component to retrieve all book information
+    protected override void OnInitialized()
+    {
+        allBooks = InventoryDatabase.GetAllBooks();
+    }
+
+    private async Task AddtoSale()
+    {
+        // Check if there are items in the sale
+        if (saleItems.Count == 0)
+        {
+            receiptText = ""; // Clear receipt text
+        }
+        // Initialize the foundBook variable
+        foundBook = null;
+
+        try
+        {
+            // Validate inputs
+            if (string.IsNullOrWhiteSpace(searchInput) || quantityInput <= 0)
+            {
+                await JS.InvokeVoidAsync("alert", "Please enter a valid ISBN and quantity.");
+                return;
+            }
+
+            // Search by ISBN
+            foundBook = InventoryDatabase.SearchByISBN(searchInput);
+
+            // Handle the case where no book is found
+            if (foundBook == null)
+            {
+                await JS.InvokeVoidAsync("alert", "Book not found in inventory.");
+                return;
+            }
+
+            // Handle stock-related validations
+            if (foundBook.Quantity <= 0)
+            {
+                await JS.InvokeVoidAsync("alert", "Book is out of stock.");
+                return;
+            }
+
+            if (quantityInput > foundBook.Quantity)
+            {
+                await JS.InvokeVoidAsync("alert", "Quantity exceeds available stock.");
+                return;
+            }
+
+            // Check if the item already exists in the current sale
+            var existingSaleItem = saleItems.FirstOrDefault(item => item.ISBN == foundBook.ISBN);
+
+            if (existingSaleItem != null)
+            {
+                // Update quantity and subtotal for the existing item
+                existingSaleItem.QuantitySold += quantityInput;
+                totalAmount += foundBook.Price * quantityInput;
+
+                // Update inventory
+                foundBook.Quantity -= quantityInput;
+
+                await JS.InvokeVoidAsync("alert", "Book quantity updated in the sale.");
+            }
+            else
+            {
+                // Create a new SaleItem and add it to the sale
+                var saleItem = new SaleItem(saleId, foundBook.ISBN, quantityInput);
+                saleItems.Add(saleItem);
+
+                // Update total amount
+                totalAmount += foundBook.Price * quantityInput;
+
+                // Update inventory
+                foundBook.Quantity -= quantityInput;
+
+                await JS.InvokeVoidAsync("alert", "Book added to the sale.");
+            }
+
+            // Refresh the UI
+            StateHasChanged();
+
+            // Clear input fields
+            searchInput = "";
+            quantityInput = 1;
+        }
+        catch (Exception ex)
+        {
+            // Catch any unexpected errors
+            await JS.InvokeVoidAsync("alert", $"An error occurred: {ex.Message}");
+        }
+    }
+
+    //Confirm Sale
+    private async Task ConfirmSaleItemandAddToSale()
+    {
+        try
+        {
+            // Check if there are items in the sale
+            if (saleItems.Count == 0)
+            {
+                receiptText = ""; // Clear receipt text
+                await JS.InvokeVoidAsync("alert", "No items in the sale to confirm.");
+                return;
+            }
+            //Loop through each item in the sale and check if the book is in the inventory
+            foreach (var item in saleItems)
+            {
+                // Get the book for price and inventory update
+                var book = InventoryDatabase.SearchByISBN(item.ISBN);
+                if (book == null)
+                {
+                    await JS.InvokeVoidAsync("alert", $"Book with ISBN {item.ISBN} not found in inventory.");
+                    return;
+                }
+                // Save to SalesDatabase
+                var result = SalesDatabase.AddSaleItem(item, customerId, totalSale);
+                if (result == null)
+                {
+                    await JS.InvokeVoidAsync("alert", $"Failed to save sale item for ISBN {item.ISBN}.");
+                    return;
+                }
+
+                // Update inventory and total
+                book.Quantity -= item.QuantitySold;
+                totalAmount += book.Price * item.QuantitySold;
+            }
+
+            // Generate receipt
+            receiptText = SalesDatabase.GenerateReceipt(saleItems, customerId);
+
+            await JS.InvokeVoidAsync("alert", "Sale confirmed!");
+
+            // Clear all local states after sale
+            saleItems.Clear();
+            totalAmount = 0;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Unhandled error: {ex.Message}");
+        }
+    }
+
+    //Cancel Sale
+    private async Task CancelSale()
+    {
+        //reset receipt text
+        receiptText = "";
+        // Logic to cancel the sale
+        if (saleItems.Count == 0)
+        {
+            await JSAlert("No items in the sale to cancel.");
+            return;
+        }
+        // Reset the sale items and total amount
+        saleItems.Clear();
+        totalAmount = 0;
+
+        // Update inventory for each item in the sale
+        foreach (var item in saleItems)
+        {
+            var book = InventoryDatabase.SearchByISBN(item.ISBN);
+            if (book != null)
+            {
+                book.Quantity += item.QuantitySold; // Assuming QuantitySold is the quantity sold
+            }
+        }
+
+        await JS.InvokeVoidAsync("alert", "Sale cancelled!");
+
+		//Refresh the UI
+        StateHasChanged();
+    }
+
+    // Clear Receipt Button
+    // private async Task ClearReceipt()
+    // {
+    //     Reset receipt text, sale items, and total amount
+    //     receiptText = string.Empty;
+    //     saleItems.Clear();
+    //     totalAmount = 0;
+    //     quantityInput = 1; Reset quantity input
+
+    //     Refresh the UI
+    //     StateHasChanged();
+    // }
+
+    // JS Async Alert Method
+    private async Task JSAlert(string message)
+    {
+        await JS.InvokeVoidAsync("alert", message);
+    }
 }
+
+
+
+
+ 
+
+    
+
+   
+
+
+	
+        
+
+
+  
