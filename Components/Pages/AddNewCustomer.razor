@@ -2,8 +2,10 @@
 @using BookstorePointOfSale.DataViewModel
 @using BookstorePointOfSale.DataModel
 @using BookstorePointOfSale.Services
+@using BookstorePointOfSale.Exceptions
 @inject NavigationService NavService
 @inject ValidationService Validator
+@inject AlertService alertService
 <!-- Breadcrumb -->
 <nav aria-label="breadcrumb" class="bg-secondary bg-opacity-10 rounded-3">
     <ol class="breadcrumb align-content-center ps-3 pt-1 pb-1">
@@ -25,21 +27,21 @@
             <!-- Form Section -->
             <form @onsubmit="@(async e => await AddCustomerToDatabase())">
                 <div class="mb-3">
-                    <label for="firstname" class="form-label">First Name</label>
+                    <label for="firstname" class="form-label">First Name<i class="text-danger">*</i></label>
                     <div >
                         <input @bind="firstName" class="form-control" id="firstname"/>
                     </div>
                 </div>
 
                 <div class="mb-3">
-                    <label for="lastname" class="form-label">Last Name</label>
+                    <label for="lastname" class="form-label">Last Name<i class="text-danger">*</i></label>
                     <div>
                         <input @bind="lastName" class="form-control" id="lastname" />
                     </div>
                 </div>
 
                 <div class="mb-3">
-                    <label for="email" class="form-label">Email</label>
+                    <label for="email" class="form-label">Email<i class="text-danger">*</i></label>
                     <div>
                         <input @bind="email" type="email" class="form-control"  id="email"/>
                     </div>
@@ -53,7 +55,8 @@
                 </div>
 
                 <div>
-                    <button class="btn btn-primary mb-3 me-3 align-middle" type="submit">Add Customer</button>
+                    <button class="btn btn-primary mb-3 me-3 mt-3 align-middle" type="submit">Add Customer</button>
+                    <button class="btn btn-danger" type="button" @onclick="NavService.GoToCustomerManagementPage">Cancel</button>
                 </div>
             </form>
 
@@ -83,7 +86,7 @@
                 </div>
 
                 <div class="mt-2 mb-2">
-                    <button class="btn btn-success mt-6" @* @onclick="GoToCustomerPage" *@>Go to Customer Page</button>
+                    <button class="btn btn-success mt-6" @onclick="NavService.GoToCustomerManagementPage" >Go to Customer Page</button>
                     <button class="btn btn-success mt-6" @* @onclick="GoToCustomerPage" *@>Start a Sale</button>
                 </div>
             }
@@ -107,18 +110,35 @@
     /// </summary>
     public async Task AddCustomerToDatabase()
     {
-        //Check if the form is valid
-        if (!await Validator.ValidateName(firstName, lastName)  || !await Validator.ValidatePhoneNumber(phoneNumber))
+        try
         {
-            return;
-        }
+            // Check if the form is valid
+            if (!await Validator.ValidateName(firstName, lastName) || !await Validator.ValidatePhoneNumber(phoneNumber))
+            {
+                return;
+            }
 
-        //Create a new customer
-        customer = new Customer(firstName, lastName, email, phoneNumber);
-        // Add the customer to the database
-        customer = CustomerDatabase.AddCustomer(customer);
-        //Set new customer to true
-        newCustomer = true;
+            // Validate the email using the Validator
+            Validator.ValidateEmail(email);  // This will throw an InvalidEmailException if the email is invalid
+
+            // If validation passed, create a new customer
+            customer = new Customer(firstName, lastName, email, phoneNumber);
+            // Add the customer to the database
+            customer = CustomerDatabase.AddCustomer(customer);
+            // Set new customer to true
+            newCustomer = true;
+        }
+        catch (InvalidEmailException ex)
+        {
+            // Handle invalid email
+            await alertService.JSAlert($"Error: {ex.Message}");  
+        }
+        catch (Exception ex)
+        {
+            // Handle any other unexpected exceptions
+            await alertService.JSAlert($"Unexpected error: {ex.Message}");  
+        }
     }
+
 
 }

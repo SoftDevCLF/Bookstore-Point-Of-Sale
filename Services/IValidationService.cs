@@ -10,5 +10,6 @@ namespace BookstorePointOfSale.Services
     {
         Task<bool> ValidateName(string firstName, string lastName);
         Task<bool> ValidatePhoneNumber(string phoneNumber);
+        void ValidateEmail(string email);
     }
 }

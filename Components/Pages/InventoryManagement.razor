@@ -1,10 +1,13 @@
 ﻿@page "/inventoryManagement"
 @using BookstorePointOfSale.DataModel
 @using BookstorePointOfSale.DataViewModel
-@inject NavigationManager Navigation
-@inject IJSRuntime JS
+@using BookstorePointOfSale.Services
+@inject NavigationService NavService
+@inject AlertService alertService
+@inject ValidationService validationService
 
 
+<!-- Breadcrumb Navigation for user orientation -->
 <nav aria-label="breadcrumb" class="bg-secondary bg-opacity-10 rounded-3">
     <ol class="breadcrumb align-content-center ps-3 pt-1 pb-1">
         <li class="breadcrumb-item"><a href="/">Home</a></li>
@@ -14,36 +17,50 @@
 
 <hr/>
 
+<!-- Page Title -->
 <h1>Inventory Management</h1>
 
 <hr/>
 
+<!-- Welcome Message -->
 <p class="ms-2 text-muted">Welcome to the Inventory Management Page</p>
 
+<!-- Container for Search and Navigation Buttons -->
 <div class="container">
     <div class="row">
-        <div class="col-7">
+        <!-- Search Form Column -->
+        <div class="col-6">
             <h4>Search for a Book</h4>
             <form @onsubmit="SearchInventory">
                 <div class="input-group mb-3">
-                    <input class="border rounded-1 w-50 ps-3" placeholder="Enter ISBN" @bind="isbn"/>
+                    <!-- Dropdown to choose search method -->
+                    <select class="form-select w-25" @bind="searchBy">
+                        <option value="isbn">Search by ISBN</option>
+                        <option value="title">Search by Title</option>
+                    </select>
+                    <!-- Input field for search term -->
+                    <input class="form-control w-50" placeholder="Enter Item to Search" @bind="searchInput"/>
+                    <!-- Submit Button -->
                     <button class="btn btn-primary" type="submit">Search</button>
                 </div>
             </form>
         </div>
 
-        <div class="col-5">
+        <!-- Buttons for Add and View Inventory -->
+        <div class="col-5" style="margin-left: 5rem;">
             <div class="d-flex justify-content-between align-items-start gap-4">
-                <div>
+                <div style="margin-left: 5rem;">
                     <h4>Add New Inventory</h4>
-                    <button @onclick="GoToAddNewBookPage" type="button" class="btn btn-primary">
+                    <!-- Navigation button to Add Book Page -->
+                    <button @onclick="NavService.GoToAddNewBookPage" type="button" class="btn btn-primary">
                         <i class="bi bi-plus-circle me-2"></i> Add New Book
                     </button>
                 </div>
 
                 <div>
                     <h4>View All Inventory</h4>
-                    <button @onclick="GoToViewInventoryPage" type="button" class="btn btn-secondary">
+                    <!-- Navigation button to View All Inventory Page -->
+                    <button @onclick="NavService.GoToViewInventoryPage" type="button" class="btn btn-secondary">
                         <i class="bi bi-book me-2"></i> View All Inventory
                     </button>
                 </div>
@@ -54,6 +71,7 @@
 
 <hr/>
 
+<!-- Table to Display Search Results -->
 <div class="col-md-12 border-start border-end border-top align-middle">
     <p class="mt-3 ms-3">Search Results</p>
     <table class="table">
@@ -72,6 +90,7 @@
         <tbody>
             @if (foundBook != null)
             {
+                <!-- Display a single book result -->
                 <tr>
                     <td>@foundBook.ISBN</td>
                     <td>@foundBook.Title</td>
@@ -80,13 +99,35 @@
                     <td>@foundBook.Price.ToString("C")</td>
                     <td>@foundBook.Quantity</td>
                     <td class="text-center">
-                        <button class="btn btn-primary" @onclick="() => EditBook(foundBook.ISBN)">Edit</button>
+                        <!-- Edit and Delete buttons for single result -->
+                        <button class="btn btn-primary" @onclick="() => NavService.GoToEditBookPage(foundBook.ISBN)">Edit</button>
                         <button class="btn btn-danger" @onclick="() => ConfirmDelete(foundBook.ISBN)">Delete</button>
                     </td>
                 </tr>
             }
+            else if (foundBooks.Count > 0)
+            {
+                <!-- Loop through and display all matching books -->
+                @foreach (var item in foundBooks)
+                {
+                    <tr>
+                        <td>@item.ISBN</td>
+                        <td>@item.Title</td>
+                        <td>@item.Author</td>
+                        <td>@item.Genre</td>
+                        <td>@item.Price.ToString("C")</td>
+                        <td>@item.Quantity</td>
+                        <td class="text-center">
+                            <!-- Edit and Delete buttons for each item -->
+                            <button class="btn btn-primary" @onclick="() => NavService.GoToEditBookPage(item.ISBN)">Edit</button>
+                            <button class="btn btn-danger" @onclick="() => ConfirmDelete(item.ISBN)">Delete</button>
+                        </td>
+                    </tr>
+                }
+            }
             else if (searched)
             {
+                <!-- Message when no results are found -->
                 <tr>
                     <td colspan="7" class="text-center text-muted">No results found.</td>
                 </tr>
@@ -95,68 +136,93 @@
     </table>
 </div>
 
+
 @code {
-    string isbn;
+    // Default search type is set to ISBN
+    string searchBy = "isbn";
+    // Stores the user input for searching
+    string searchInput;
+    // Holds a single found book if searching by ISBN
     Inventory foundBook = null;
+    // Holds a list of found books if searching by title
+    List<Inventory> foundBooks = new();
+    // Flag to indicate if a search was performed
     bool searched = false;
 
+    /// <summary>
+    /// Handles searching the inventory by ISBN or title.
+    /// Validates input and displays appropriate messages.
+    /// </summary>
     private async Task SearchInventory()
     {
-        if (string.IsNullOrWhiteSpace(isbn))
+        // Reset state
+        foundBook = null;
+        foundBooks.Clear();
+        searched = false;
+
+        // Validate that input is not empty
+        if (string.IsNullOrWhiteSpace(searchInput))
         {
-            await JSAlert("Please enter an ISBN.");
+            await alertService.JSAlert("Please enter a search value.");
             return;
         }
 
-        foundBook = InventoryDatabase.SearchByISBN(isbn);
-        searched = true;
-
-        if (foundBook == null)
+        // Search by ISBN
+        if (searchBy == "isbn")
         {
-            await JSAlert("Book not found.");
+            // Validate ISBN format
+            if (!await validationService.ValidateIsbn(searchInput))
+                return;
+
+            // Look up the book in the database
+            foundBook = InventoryDatabase.SearchByISBN(searchInput);
+            if (foundBook == null)
+            {
+                await alertService.JSAlert("Book not found.");
+            }
+        }
+        // Search by title
+        else if (searchBy == "title")
+        {
+            foundBooks = InventoryDatabase.SearchByTitle(searchInput);
+            if (foundBooks.Count == 0)
+            {
+                await alertService.JSAlert("No books found with that title.");
+            }
         }
 
-        isbn = "";
+        // Indicate search has completed and clear input field
+        searched = true;
+        searchInput = "";
     }
 
+    /// <summary>
+    /// Confirms and deletes a book from the inventory using its ISBN.
+    /// </summary>
+    /// <param name="isbn">The ISBN of the book to delete.</param>
     private async Task ConfirmDelete(string isbn)
     {
-        bool confirmed = await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to delete book {isbn}?");
+        // Ask the user to confirm deletion
+        bool confirmed = await alertService.ConfirmAlert($"Are you sure you want to delete book {isbn}?");
+
         if (confirmed)
         {
+            // Delete the book from the database
             bool success = await Task.Run(() => InventoryDatabase.DeleteBook(isbn));
+
             if (success)
             {
-                await JSAlert("Book deleted successfully.");
+                await alertService.JSAlert("Book deleted successfully!");
+
+                // Reset display state
                 foundBook = null;
+                foundBooks.Clear();
                 searched = false;
             }
             else
             {
-                await JSAlert("Failed to delete the book.");
+                await alertService.JSAlert("Failed to delete the book!");
             }
         }
     }
-
-
-    private void GoToAddNewBookPage()
-    {
-        Navigation.NavigateTo("/addNewBook");
-    }
-
-    private void EditBook(string isbn)
-    {
-        Navigation.NavigateTo($"/editBook/{isbn}");
-    }
-
-    private void GoToViewInventoryPage()
-    {
-        Navigation.NavigateTo("/viewInventory");    
-    }
-
-    private async Task JSAlert(string message)
-    {
-        await JS.InvokeVoidAsync("alert", message);
-    }
-
 }

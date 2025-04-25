@@ -67,4 +67,8 @@
         <PackageReference Include="WakaTime.Shared.ExtensionUtils" Version="4.2.2" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Components\NewFolder\" />
+    </ItemGroup>
+
 </Project>

@@ -40,7 +40,44 @@ namespace BookstorePointOfSale.Services
             _navigationManager.NavigateTo($"/updatecustomer/{customerId}");
         }
 
-        public void GoToSalesPage(int customerId)
+        /// <summary>
+        /// Navigates to the page for adding a new book to the inventory.
+        /// </summary>
+        public void GoToAddNewBookPage()
+        {
+            _navigationManager.NavigateTo("/addNewBook");
+        }
+
+        /// <summary>
+        /// Navigates to the page for editing the details of a specific book.
+        /// </summary>
+        /// <param name="isbn">The ISBN of the book to edit.</param>
+        public async void GoToEditBookPage(string isbn)
+        {
+            _navigationManager.NavigateTo($"/editBook/{isbn}");
+        }
+
+        /// <summary>
+        /// Navigates to the page that displays all inventory records.
+        /// </summary>
+        public void GoToViewInventoryPage()
+        {
+            _navigationManager.NavigateTo("/viewInventory");
+        }
+
+        /// <summary>
+        /// Navigates to the inventory management dashboard page.
+        /// </summary>
+        public void GoToInventoryManagementPage()
+        {
+            _navigationManager.NavigateTo("/inventoryManagement");
+        }
+
+        /// <summary>
+        /// Navigates to the sales page and holds the customer id
+        /// </summary>
+        /// <param name="customerId"></param>
+        public async void GoToSalesPage(int customerId)
         {
             _navigationManager.NavigateTo($"/sales/{customerId}");
         }
