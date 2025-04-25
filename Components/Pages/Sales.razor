@@ -80,13 +80,32 @@
     private string searchInput;
     private int saleId;
     private double totalSale;
-	private int customerId;
     private int quantityInput = 1; // Default quantity
     private double totalAmount = 0;
 
     private string searchBy = "isbn"; // Default search by ISBN
     List<Inventory> foundBooks= new List<Inventory>();
     Inventory foundBook = null;
+
+    [Parameter] 
+    public int customerId { get; set; } //Bind the customerId from route to the property
+    private Customer selectedCustomer = new();
+	private bool isLoaded = false;
+
+    //Retrieve customer from DB
+	protected override async Task OnParametersSetAsync()
+	{
+		selectedCustomer = CustomerDatabase.GetCustomerById(customerId); //Get the customer from the database and assign it to the selected customer
+		if (selectedCustomer == null) //Check if the customer was found
+		{
+			await JS.InvokeVoidAsync("alert", "Customer not found.");
+			Navigation.NavigateTo("/customerManagement");
+		}
+		else
+		{
+			isLoaded = true; // Set isLoaded to true if customer is found
+		}
+	}
 
 
     private List<Inventory> allBooks = new List<Inventory>();
