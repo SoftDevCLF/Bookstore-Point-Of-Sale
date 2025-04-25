@@ -1,4 +1,4 @@
-﻿@page "/sales"
+﻿@page "/sales/{customerId:int}"
 @using BookstorePointOfSale.DataModel
 @using BookstorePointOfSale.DataViewModel
 @inject NavigationManager Navigation
@@ -66,7 +66,7 @@
 <h4>Total: @totalAmount</h4>
 <!-- Confirm and Cancel Buttons -->
 <div class="container mt-4">
-    <button class="btn btn-success" @onclick="ConfirmSaleItem">Confirm Sale</button>
+    <button class="btn btn-success" @onclick="ConfirmSaleItemandAddToSale">Confirm Sale</button>
     <button class="btn btn-danger" @onclick="CancelSale">Cancel Sale</button>
 </div>
 
@@ -79,6 +79,8 @@
     private List<SaleItem> saleItems = new List<SaleItem>();
     private string searchInput;
     private int saleId;
+    private double totalSale;
+	private int customerId;
     private int quantityInput = 1; // Default quantity
     private double totalAmount = 0;
 
@@ -149,39 +151,54 @@
         }
     }
 
-   private async Task ConfirmSaleItem()
-{
-    // Logic to confirm the sale
-    if (saleItems.Count == 0)
+    // Confirm Sale
+    private async Task ConfirmSaleItemandAddToSale()
     {
-        await JSAlert("No items in the sale to confirm.");
-        return;
+        try
+        {
+            if (saleItems.Count == 0)
+            {
+                await JS.InvokeVoidAsync("alert", "No items in the sale to confirm.");
+                return;
+            }
+
+            foreach (var item in saleItems)
+            {
+                // Get the book for price and inventory update
+                var book = InventoryDatabase.SearchByISBN(item.ISBN);
+                if (book == null)
+                {
+                    await JS.InvokeVoidAsync("alert", $"Book with ISBN {item.ISBN} not found in inventory.");
+                    return;
+                }
+
+                // Save to SalesDatabase
+                var result = SalesDatabase.AddSaleItem(item, customerId, totalSale);
+                if (result == null)
+                {
+                    await JS.InvokeVoidAsync("alert", $"Failed to save sale item for ISBN {item.ISBN}.");
+                    return;
+                }
+
+                // Update inventory and total
+                book.Quantity -= item.QuantitySold;
+                totalAmount += book.Price * item.QuantitySold;
+            }
+
+            await JS.InvokeVoidAsync("alert", "Sale confirmed!");
+
+            // Clear all local states after sale
+            saleItems.Clear();
+            totalAmount = 0;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", $"Unhandled error: {ex.Message}");
+        }
     }
 
-    foreach (var item in saleItems)
-    {
-        bool success = SalesDatabase.ConfirmSale(item);  // Handle the sale confirmation
-        if (!success)
-        {
-            await JSAlert("Failed to confirm sale.");
-            return;
-        }
 
-        // Call AddSaleItem to add each sale item to the database
-        bool addItemSuccess = SalesDatabase.AddSaleItem(item);
-        if (!addItemSuccess)
-        {
-            await JSAlert("Failed to add sale item.");
-            return;
-        }
-    }
-
-    // This could involve saving the sale to a database or processing payment
-    await JS.InvokeVoidAsync("alert", "Sale confirmed!");
-
-    // Reset after confirming
-    saleItems.Clear();
-}
 
 
 

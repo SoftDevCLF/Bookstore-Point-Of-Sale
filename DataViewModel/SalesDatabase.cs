@@ -25,68 +25,68 @@ namespace BookstorePointOfSale.DataViewModel
         public SalesDatabase() : base() { }
 
         //Method to add sale item //isbn, quantity, total, 
-        public static bool AddSaleItem(SaleItem saleItem)
-        {
-
-            using (MySqlConnection connection = GetConnection())
-            {
-                connection.Open();
-                string query = "INSERT INTO sale_item (sale_id, isbn, quantity_sold) VALUES (@saleId, @isbn, @quantitySold);";
-                using (MySqlCommand command = new MySqlCommand(query, connection))
-                {
-                    command.Parameters.AddWithValue("@saleId", saleItem.SaleId);
-                    command.Parameters.AddWithValue("@isbn", saleItem.ISBN);
-                    command.Parameters.AddWithValue("@quantitySold", saleItem.QuantitySold);
-                    command.ExecuteNonQuery();
-                }
-
-                // Update the inventory after the sale
-                string updateQuery = "UPDATE inventory SET book_stock = book_stock - @quantitySold WHERE isbn = @isbn";
-                using (MySqlCommand updateCommand = new MySqlCommand(updateQuery, connection))
-                {
-                    updateCommand.Parameters.AddWithValue("@quantitySold", saleItem.QuantitySold);
-                    updateCommand.Parameters.AddWithValue("@isbn", saleItem.ISBN);
-                    updateCommand.ExecuteNonQuery();
-                }
-
-                // Get the last inserted sale ID
-                string getSaleIdQuery = "SELECT LAST_INSERT_ID();";
-                using (MySqlCommand getSaleIdCommand = new MySqlCommand(getSaleIdQuery, connection))
-                {
-                    saleItem.SaleId = Convert.ToInt32(getSaleIdCommand.ExecuteScalar()); // Assign the correct SaleId
-                }
-            }
-            return true; // Indicate success
-        }
-   
-
-
-
-        //Method to confirm sale, reduces the quantity of the book in stock
-        public static bool ConfirmSale(SaleItem saleItem)
+        public static SaleItem AddSaleItem(SaleItem saleItem, int customerId, double totalSale)
         {
             using (MySqlConnection connection = GetConnection())
             {
                 connection.Open();
+                MySqlTransaction transaction = connection.BeginTransaction();
 
-                // Reduce the inventory stock
-                string updateStockQuery = "UPDATE inventory SET book_stock = book_stock - @quantitySold WHERE isbn = @isbn;";
-                using (MySqlCommand updateCommand = new MySqlCommand(updateStockQuery, connection))
+
+                string sql = "SELECT COUNT(*) FROM book WHERE isbn = @isbn";
+                using (MySqlCommand sqlcommand = new MySqlCommand(sql, connection, transaction))
                 {
-                    updateCommand.Parameters.AddWithValue("@isbn", saleItem.ISBN);
-                    updateCommand.Parameters.AddWithValue("@quantitySold", saleItem.QuantitySold);
-                    updateCommand.ExecuteNonQuery();
+                    sqlcommand.Parameters.AddWithValue("@isbn", saleItem.ISBN);
+                    int count = Convert.ToInt32(sqlcommand.ExecuteScalar());
+                    if (count == 0)
+                    {
+                        // Book not found, handle accordingly
+                        Console.WriteLine("Book not found in the inventory.");
+                        return null;
+                    }
+
+                    //Insert the sale into the sales table
+                    string insertSaleQuery = "INSERT INTO sales (customer_id, sale_date, total_sale) VALUES (@customerId, @saleDate, @totalSale);";
+                    using (MySqlCommand command = new MySqlCommand(insertSaleQuery, connection, transaction))
+                    {
+                        command.Parameters.AddWithValue("@customerId", customerId);  // Passed from UI or other code
+                        command.Parameters.AddWithValue("@saleDate", DateTime.Now);  // Or use a specific date
+                        command.Parameters.AddWithValue("@totalSale", totalSale);    // Calculate this based on items
+                        command.ExecuteNonQuery();
+                    }
+
+                    //Get sale ID  
+                    int saleId;
+                    string getSaleIdQuery = "SELECT LAST_INSERT_ID();";
+                    using (MySqlCommand getSaleIdCommand = new MySqlCommand(getSaleIdQuery, connection, transaction))
+                    {
+                        saleId = Convert.ToInt32(getSaleIdCommand.ExecuteScalar());
+                    }
+                    saleItem.SaleId = saleId; // Set the sale ID in the SaleItem object
+
+                    //Insert into sale_item table
+                    string sql2 = "INSERT INTO sale_item (sale_id, isbn, quantity_sold) VALUES (@sale_id, @isbn, @quantitySold)";
+                    using (MySqlCommand sqlcommand2 = new MySqlCommand(sql2, connection, transaction))
+                    {
+                        sqlcommand2.Parameters.AddWithValue("@sale_id", saleItem.SaleId);
+                        sqlcommand2.Parameters.AddWithValue("@isbn", saleItem.ISBN);
+                        sqlcommand2.Parameters.AddWithValue("@quantitySold", saleItem.QuantitySold);
+                        sqlcommand2.ExecuteNonQuery();
+                    }
+
+                    //Update the inventory stock
+                    string updateStockQuery = "UPDATE inventory SET book_stock = book_stock - @quantitySold WHERE isbn = @isbn;";
+                    using (MySqlCommand updateCommand = new MySqlCommand(updateStockQuery, connection))
+                    {
+                        updateCommand.Parameters.AddWithValue("@isbn", saleItem.ISBN);
+                        updateCommand.Parameters.AddWithValue("@quantitySold", saleItem.QuantitySold);
+                        updateCommand.ExecuteNonQuery();
+                    }
+                    transaction.Commit();
                 }
-
-                // Add sale item to sale_item table
-                AddSaleItem(saleItem);
-
-                Console.WriteLine("Sale confirmed successfully.");
-                return true;
             }
+            return saleItem;
         }
-
-
 
 
 
