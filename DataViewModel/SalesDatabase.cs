@@ -132,7 +132,6 @@ namespace BookstorePointOfSale.DataViewModel
             }
         }
 
-
         /// <summary>
         /// Generates a receipt for a customer based on their ID
         /// </summary>
@@ -141,6 +140,7 @@ namespace BookstorePointOfSale.DataViewModel
         /// <returns>Receipt builder item</returns>
         public static string GenerateReceipt(List<SaleItem> saleItems, int customerId)
         {
+            //create a StringBuilder to build the receipt
             var receiptBuilder = new StringBuilder();
             double totalSale = 0;
 
@@ -153,7 +153,7 @@ namespace BookstorePointOfSale.DataViewModel
 
             // Get current date/time
             var saleDate = DateTime.Now;
-
+            // Format the date/time
             receiptBuilder.AppendLine("========== BOOKSTORE RECEIPT ==========\n");
             receiptBuilder.AppendLine($"Sale Date    : {saleDate.ToString("yyyy-MM-dd HH:mm:ss")}");
             receiptBuilder.AppendLine($"Customer     : {customer.FirstName} {customer.LastName}");
@@ -185,6 +185,7 @@ namespace BookstorePointOfSale.DataViewModel
             }
             else
             {
+                // If no items in the sale, show a message
                 receiptBuilder.AppendLine("No items in current sale.");
             }
 
@@ -199,11 +200,12 @@ namespace BookstorePointOfSale.DataViewModel
         /// <returns>Total Sales By Date/returns>
         public static double GetTotalSalesByDate(DateTime date)
         {
+
             string query = @"SELECT SUM(b.unit_price * i.quantity_sold) AS TotalSales
                             FROM sales s
                             JOIN sale_item i ON s.sale_id = i.sale_id
                             JOIN book b ON i.isbn = b.isbn
-                            WHERE DATE(s.sale_date) = @date";
+                            WHERE DATE(s.sale_date) = @date"; 
 
             using (var connection = GetConnection())
             {

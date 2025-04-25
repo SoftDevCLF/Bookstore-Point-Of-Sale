@@ -304,7 +304,7 @@
             }
 
             // Generate receipt
-            receiptText = SalesDatabase.GenerateReceipt(customerId);
+            receiptText = SalesDatabase.GenerateReceipt(saleItems, customerId);
 
             await JS.InvokeVoidAsync("alert", "Sale confirmed!");
 
