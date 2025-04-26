@@ -23,25 +23,25 @@ Our app offers a lightweight POS solution tailored for these cases  (whether it�
 ## 🔍Preview
 Here's a seak peek of Bookstore Point of Sale System in action:
 
-![Home Screen](./READMEimgs/HomePage.png)
+![Home Screen](./wwwroot/READMEimgs/HomePage.png)
 *Landing Page*
 
-![Customer management](./READMEimgs/CustomerManagement.png)
+![Customer management](./wwwroot/READMEimgs/HomePage.png)
 *Customer Management Page*
 
-![Customer management Add New Customer](./READMEimgs/AddNewCustomer.png)
+![Customer management Add New Customer](./wwwroot/READMEimgs/HomePage.png)
 *Add New Customer Feature*
 
-![Sales](./READMEimgs/Sales.png)
+![Sales](./wwwroot/READMEimgs/HomePage.png)
 *Sales Page*
 
-![Sales Reports](./READMEimgs/salereports.png)
+![Sales Reports](./wwwroot/READMEimgs/HomePage.png)
 *Reports*
 
-![Inventory management](./READMEimgs/InventoryManagement.png)
+![Inventory management](./wwwroot/READMEimgs/HomePage.png)
 *Inventory Management Page*
 
-![Add A Book](./READMEimgs/AddBook.png)
+![Add A Book](./wwwroot/READMEimgs/HomePage.png)
 *Add a Book Feature*
 
 ## 🔥Getting Started
