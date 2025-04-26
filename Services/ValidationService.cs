@@ -139,16 +139,16 @@ namespace BookstorePointOfSale.Services
             }
 
             // Price must not be negative
-            if (price < 0)
+            if (price <= 0)
             {
-                await _alertService.JSAlert("Price cannot be negative.");
+                await _alertService.JSAlert("Price must be greater than $0.");
                 return false;
             }
 
             // Quantity must not be negative
-            if (quantity < 0)
+            if (quantity <= 0)
             {
-                await _alertService.JSAlert("Quantity cannot be negative.");
+                await _alertService.JSAlert("Quantity must be greater than 0.");
                 return false;
             }
 
