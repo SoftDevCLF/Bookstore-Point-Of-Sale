@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="BookstorePointOfSale.DataModel.Book">
+    <Position X="3" Y="1.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAABQAAEEAAgAIAAAAAAAAAAAAAAAAAQAAAIAE=</HashCode>
+      <FileName>DataModel\Book.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="BookstorePointOfSale.DataModel.Customer">
+    <Position X="5.5" Y="2" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAABAAAAAAAABAAAAAAAAAAAAA=</HashCode>
+      <FileName>DataModel\Customer.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="BookstorePointOfSale.DataModel.Inventory">
+    <Position X="0.75" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAgAAAAAA=</HashCode>
+      <FileName>DataModel\Inventory.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="BookstorePointOfSale.DataModel.Person">
+    <Position X="8" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAEAAACAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAg=</HashCode>
+      <FileName>DataModel\Person.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="BookstorePointOfSale.DataModel.SaleItem">
+    <Position X="10" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAQAABAAAAAAAAAAAgAAAAAAAAAAAAAAAEAA=</HashCode>
+      <FileName>DataModel\SaleItem.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="BookstorePointOfSale.DataModel.Sales">
+    <Position X="12.25" Y="2.5" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAEAAAAAAAAQCAAAAAAAAAAAgAAAABAAAAAAAAEAEAA=</HashCode>
+      <FileName>DataModel\Sales.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
