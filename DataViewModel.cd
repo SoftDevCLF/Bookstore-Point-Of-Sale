@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ClassDiagram MajorVersion="1" MinorVersion="1">
+  <Class Name="BookstorePointOfSale.DataViewModel.Database">
+    <Position X="7.25" Y="1.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAABAAAAA=</HashCode>
+      <FileName>DataViewModel\Database.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="BookstorePointOfSale.DataViewModel.CustomerDatabase">
+    <Position X="7.25" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAAAAAAAAQAAAAAABAAAAAAAACAAAAAAAAAEAAAgAAA=</HashCode>
+      <FileName>DataViewModel\CustomerDatabase.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="BookstorePointOfSale.DataViewModel.InventoryDatabase">
+    <Position X="3" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>BBAAAEAAAQAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAA=</HashCode>
+      <FileName>DataViewModel\InventoryDatabase.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Class Name="BookstorePointOfSale.DataViewModel.SalesDatabase">
+    <Position X="11.25" Y="4.75" Width="1.5" />
+    <TypeIdentifier>
+      <HashCode>AAABAAAACAgBAAAAAAAAAAAAAAAAAAAAAAAAAAAICAA=</HashCode>
+      <FileName>DataViewModel\SalesDatabase.cs</FileName>
+    </TypeIdentifier>
+  </Class>
+  <Font Name="Segoe UI" Size="9" />
+</ClassDiagram>
