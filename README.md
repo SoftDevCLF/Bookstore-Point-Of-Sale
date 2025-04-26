@@ -26,22 +26,22 @@ Here's a seak peek of Bookstore Point of Sale System in action:
 ![Home Screen](./wwwroot/READMEimgs/HomePage.png)
 *Landing Page*
 
-![Customer management](./wwwroot/READMEimgs/HomePage.png)
+![Customer management](./wwwroot/READMEimgs/CustomerManagement.png)
 *Customer Management Page*
 
-![Customer management Add New Customer](./wwwroot/READMEimgs/HomePage.png)
+![Customer management Add New Customer](./wwwroot/READMEimgs/AddNewCustomer.png)
 *Add New Customer Feature*
 
-![Sales](./wwwroot/READMEimgs/HomePage.png)
+![Sales](./wwwroot/READMEimgs/Sales.png)
 *Sales Page*
 
-![Sales Reports](./wwwroot/READMEimgs/HomePage.png)
+![Sales Reports](./wwwroot/READMEimgs/salereports.png)
 *Reports*
 
-![Inventory management](./wwwroot/READMEimgs/HomePage.png)
+![Inventory management](./wwwroot/READMEimgs/InventoryManagement.png)
 *Inventory Management Page*
 
-![Add A Book](./wwwroot/READMEimgs/HomePage.png)
+![Add A Book](./wwwroot/READMEimgs/AddBook.png)
 *Add a Book Feature*
 
 ## 🔥Getting Started
