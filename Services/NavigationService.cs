@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Components;
 
 namespace BookstorePointOfSale.Services
 {
-    public class NavigationService : INavigationService
+    public class NavigationService
     {
         private NavigationManager _navigationManager;
 
